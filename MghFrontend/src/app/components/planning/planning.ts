@@ -82,7 +82,11 @@ export class Planning implements OnInit {
   }
 
   loadHotelProfile(): void {
-    this.hotelProfileService.getProfile().subscribe({
+    const user = this.authService.currentUserValue;
+    if (!user) return;
+
+    // getProfile() ne marche que pour HOTEL, donc on utilise getHotelById
+    this.hotelProfileService.getHotelById(user.hotelId).subscribe({
       next: (r) => { if (r.success) this.hotelProfile = r.data; },
       error: () => {}
     });
