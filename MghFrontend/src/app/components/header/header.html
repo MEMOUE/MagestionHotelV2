@@ -20,11 +20,11 @@
       <nav class="header-nav" *ngIf="!isAuthenticated">
         <a [routerLink]="['/accueil']" class="nav-link" fragment="accueil">Accueil</a>
         <a href="#fonctionnalites" class="nav-link">Fonctionnalités</a>
-        <a href="#tarifs" class="nav-link" >Tarifs</a>
+        <a href="#tarifs" class="nav-link">Tarifs</a>
         <a href="#contact" class="nav-link">Contact</a>
       </nav>
 
-      <!-- ✅ Navigation Desktop - Connecté (filtrée par permissions) -->
+      <!-- Navigation Desktop - Connecté -->
       <nav class="header-nav" *ngIf="isAuthenticated">
         <a *ngIf="canSeePlanning"
            [routerLink]="['/planning']" routerLinkActive="active" class="nav-link">
@@ -71,9 +71,7 @@
         <!-- Auth Buttons - Non connecté -->
         <div class="auth-buttons" *ngIf="!isAuthenticated">
           <button [routerLink]="['/login']" class="btn-login">Connexion</button>
-          <button [routerLink]="['/register']" class="btn-demo">
-            Inscription
-          </button>
+          <button [routerLink]="['/register']" class="btn-demo">Inscription</button>
         </div>
 
         <!-- Profile Menu - Connecté -->
@@ -87,7 +85,7 @@
           </button>
 
           <!-- Dropdown Profile Menu -->
-          <div class="profile-dropdown" *ngIf="showProfileMenu" (clickOutside)="closeProfileMenu()">
+          <div class="profile-dropdown" *ngIf="showProfileMenu">
             <div class="dropdown-header">
               <div class="dropdown-avatar">
                 {{ getUserInitials() }}
@@ -99,7 +97,6 @@
                   <i class="pi pi-building"></i>
                   {{ currentUser?.hotelName }}
                 </div>
-                <!-- ✅ Affichage du rôle -->
                 <div class="dropdown-hotel" style="color: #a78bfa;">
                   <i class="pi pi-shield"></i>
                   {{ userRoleLabel }}
@@ -140,109 +137,134 @@
       </div>
     </div>
   </div>
-
-  <!-- Mobile Navigation - Non connecté -->
-  <div class="mobile-nav" [class.show]="showMobileMenu" *ngIf="!isAuthenticated">
-    <nav class="mobile-nav-content">
-      <a [routerLink]="['/accueil']" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-home"></i>
-        <span>Accueil</span>
-      </a>
-      <a [routerLink]="['/accueil']" fragment="fonctionnalites" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-sparkles"></i>
-        <span>Fonctionnalités</span>
-      </a>
-      <a [routerLink]="['/accueil']" fragment="tarifs" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-tag"></i>
-        <span>Tarifs</span>
-      </a>
-      <a href="#contact" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-envelope"></i>
-        <span>Contact</span>
-      </a>
-      <div class="mobile-nav-divider"></div>
-      <button [routerLink]="['/login']" class="mobile-nav-button btn-login-mobile" (click)="closeMobileMenu()">
-        Connexion
-      </button>
-      <button [routerLink]="['/register']" class="mobile-nav-button btn-demo-mobile" (click)="closeMobileMenu()">
-        Inscription
-      </button>
-    </nav>
-  </div>
-
-  <!-- ✅ Mobile Navigation - Connecté (filtrée par permissions) -->
-  <div class="mobile-nav" [class.show]="showMobileMenu" *ngIf="isAuthenticated">
-    <nav class="mobile-nav-content">
-      <!-- Profil utilisateur -->
-      <div class="mobile-profile">
-        <div class="mobile-profile-avatar">
-          {{ getUserInitials() }}
-        </div>
-        <div class="mobile-profile-info">
-          <div class="mobile-profile-name">{{ getUserDisplayName() }}</div>
-          <div class="mobile-profile-email">{{ currentUser?.email }}</div>
-          <!-- ✅ Rôle affiché -->
-          <div class="mobile-profile-email" style="color: #a78bfa; font-weight: 600;">
-            {{ userRoleLabel }}
-          </div>
-        </div>
-      </div>
-
-      <div class="mobile-nav-divider"></div>
-
-      <a [routerLink]="['/dashboard']" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-home"></i>
-        <span>Dashboard</span>
-      </a>
-      <a *ngIf="canSeeChambres"
-         [routerLink]="['/chambres']" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-building"></i>
-        <span>Chambres</span>
-      </a>
-      <a *ngIf="canSeeReservations"
-         [routerLink]="['/reservation']" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-calendar"></i>
-        <span>Réservations</span>
-      </a>
-      <a *ngIf="canSeeRestaurant"
-         [routerLink]="['/restauration']" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-shopping-cart"></i>
-        <span>Restauration</span>
-      </a>
-      <a *ngIf="canSeeFinances"
-         [routerLink]="['/finances']" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-wallet"></i>
-        <span>Finances</span>
-      </a>
-      <a *ngIf="canSeeStocks"
-         [routerLink]="['/stocks']" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-box"></i>
-        <span>Stocks</span>
-      </a>
-
-      <div class="mobile-nav-divider"></div>
-
-      <a *ngIf="canSeeEmployes"
-         [routerLink]="['/employes']" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-users"></i>
-        <span>Employés</span>
-      </a>
-      <a *ngIf="canSeeClients"
-         [routerLink]="['/clients']" class="mobile-nav-link" (click)="closeMobileMenu()">
-        <i class="pi pi-user"></i>
-        <span>Clients</span>
-      </a>
-
-      <div class="mobile-nav-divider"></div>
-
-      <button class="mobile-nav-button btn-logout-mobile" (click)="logout()">
-        <i class="pi pi-sign-out"></i>
-        Déconnexion
-      </button>
-    </nav>
-  </div>
 </header>
 
-<!-- Backdrop for mobile menu and profile dropdown -->
+<!-- ═══════════════════════════════════════════════════════════════
+     MOBILE NAVIGATION — EN DEHORS DU <header> pour éviter
+     les conflits de position fixed imbriqués
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Mobile Navigation - Non connecté -->
+<div class="mobile-nav" [class.show]="showMobileMenu && !isAuthenticated">
+  <nav class="mobile-nav-content">
+    <a [routerLink]="['/accueil']" class="mobile-nav-link" (click)="navigateMobile('/accueil')">
+      <i class="pi pi-home"></i>
+      <span>Accueil</span>
+    </a>
+    <a [routerLink]="['/accueil']" fragment="fonctionnalites" class="mobile-nav-link" (click)="closeMobileMenu()">
+      <i class="pi pi-sparkles"></i>
+      <span>Fonctionnalités</span>
+    </a>
+    <a [routerLink]="['/accueil']" fragment="tarifs" class="mobile-nav-link" (click)="closeMobileMenu()">
+      <i class="pi pi-tag"></i>
+      <span>Tarifs</span>
+    </a>
+    <a href="#contact" class="mobile-nav-link" (click)="closeMobileMenu()">
+      <i class="pi pi-envelope"></i>
+      <span>Contact</span>
+    </a>
+    <div class="mobile-nav-divider"></div>
+    <button class="mobile-nav-button btn-login-mobile" (click)="navigateMobile('/login')">
+      Connexion
+    </button>
+    <button class="mobile-nav-button btn-demo-mobile" (click)="navigateMobile('/register')">
+      Inscription
+    </button>
+  </nav>
+</div>
+
+<!-- Mobile Navigation - Connecté -->
+<div class="mobile-nav" [class.show]="showMobileMenu && isAuthenticated">
+  <nav class="mobile-nav-content">
+    <!-- Profil utilisateur -->
+    <div class="mobile-profile">
+      <div class="mobile-profile-avatar">
+        {{ getUserInitials() }}
+      </div>
+      <div class="mobile-profile-info">
+        <div class="mobile-profile-name">{{ getUserDisplayName() }}</div>
+        <div class="mobile-profile-email">{{ currentUser?.email }}</div>
+        <div class="mobile-profile-email" style="color: #a78bfa; font-weight: 600;">
+          {{ userRoleLabel }}
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-nav-divider"></div>
+
+    <a class="mobile-nav-link" (click)="navigateMobile('/dashboard')"
+       [class.active]="isActiveRoute('/dashboard')">
+      <i class="pi pi-home"></i>
+      <span>Dashboard</span>
+    </a>
+
+    <a *ngIf="canSeePlanning" class="mobile-nav-link"
+       (click)="navigateMobile('/planning')"
+       [class.active]="isActiveRoute('/planning')">
+      <i class="pi pi-building"></i>
+      <span>Planning</span>
+    </a>
+
+    <a *ngIf="canSeeChambres" class="mobile-nav-link"
+       (click)="navigateMobile('/chambres')"
+       [class.active]="isActiveRoute('/chambres')">
+      <i class="pi pi-building"></i>
+      <span>Chambres</span>
+    </a>
+
+    <a *ngIf="canSeeReservations" class="mobile-nav-link"
+       (click)="navigateMobile('/reservation')"
+       [class.active]="isActiveRoute('/reservation')">
+      <i class="pi pi-calendar"></i>
+      <span>Réservations</span>
+    </a>
+
+    <a *ngIf="canSeeRestaurant" class="mobile-nav-link"
+       (click)="navigateMobile('/restauration')"
+       [class.active]="isActiveRoute('/restauration')">
+      <i class="pi pi-shopping-cart"></i>
+      <span>Restauration</span>
+    </a>
+
+    <a *ngIf="canSeeFinances" class="mobile-nav-link"
+       (click)="navigateMobile('/finances')"
+       [class.active]="isActiveRoute('/finances')">
+      <i class="pi pi-wallet"></i>
+      <span>Finances</span>
+    </a>
+
+    <a *ngIf="canSeeStocks" class="mobile-nav-link"
+       (click)="navigateMobile('/stocks')"
+       [class.active]="isActiveRoute('/stocks')">
+      <i class="pi pi-box"></i>
+      <span>Stocks</span>
+    </a>
+
+    <div class="mobile-nav-divider"></div>
+
+    <a *ngIf="canSeeEmployes" class="mobile-nav-link"
+       (click)="navigateMobile('/employes')"
+       [class.active]="isActiveRoute('/employes')">
+      <i class="pi pi-users"></i>
+      <span>Employés</span>
+    </a>
+
+    <a *ngIf="canSeeClients" class="mobile-nav-link"
+       (click)="navigateMobile('/clients')"
+       [class.active]="isActiveRoute('/clients')">
+      <i class="pi pi-user"></i>
+      <span>Clients</span>
+    </a>
+
+    <div class="mobile-nav-divider"></div>
+
+    <button class="mobile-nav-button btn-logout-mobile" (click)="logout()">
+      <i class="pi pi-sign-out"></i>
+      Déconnexion
+    </button>
+  </nav>
+</div>
+
+<!-- Backdrop -->
 <div class="mobile-backdrop" [class.show]="showMobileMenu || showProfileMenu"
      (click)="closeMobileMenu(); closeProfileMenu()"></div>

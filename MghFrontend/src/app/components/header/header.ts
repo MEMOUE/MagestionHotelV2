@@ -26,7 +26,7 @@ export class Header implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
-    public permissionService: PermissionService  // ✅ public pour le template
+    public permissionService: PermissionService
   ) {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -54,7 +54,7 @@ export class Header implements OnInit, OnDestroy {
     }
   }
 
-  // ─── Vérifications de visibilité par module (desktop + mobile) ────────────
+  // ─── Permissions de visibilité ────────────────────────────────
 
   get canSeeReservations(): boolean {
     return this.permissionService.isHotelAccount ||
@@ -110,23 +110,38 @@ export class Header implements OnInit, OnDestroy {
       );
   }
 
-  get canSeeProfile(): boolean {
-    // Le profil hôtel n'est visible que pour le compte HOTEL
-    // Un employé voit son propre profil
-    return true;
-  }
-
-  // ─── Rôle affiché dans le header ──────────────────────────────────────────
+  // ─── Rôle affiché ─────────────────────────────────────────────
 
   get userRoleLabel(): string {
     if (this.permissionService.isHotelAccount) return 'Administrateur';
     const roles = this.currentUser?.roles;
     if (!roles || roles.length === 0) return 'Employé';
-    // Afficher le premier rôle en majuscule
     return roles[0].charAt(0).toUpperCase() + roles[0].slice(1).toLowerCase();
   }
 
-  // ─── Actions existantes ───────────────────────────────────────────────────
+  // ─── Navigation mobile fiable ─────────────────────────────────
+
+  /**
+   * Ferme le menu PUIS navigue via le Router.
+   * Évite le conflit routerLink + (click) + position:fixed sur mobile.
+   */
+  navigateMobile(path: string): void {
+    this.closeMobileMenu();
+    // Petit délai pour laisser l'animation de fermeture se terminer
+    setTimeout(() => {
+      this.router.navigate([path]);
+    }, 50);
+  }
+
+  /**
+   * Vérifie si la route courante correspond au chemin donné.
+   * Utilisé pour le style .active sur les liens mobiles.
+   */
+  isActiveRoute(path: string): boolean {
+    return this.router.url === path || this.router.url.startsWith(path + '/');
+  }
+
+  // ─── Actions existantes ───────────────────────────────────────
 
   toggleTheme(): void {
     const newValue = !this.isDarkMode();
@@ -169,9 +184,9 @@ export class Header implements OnInit, OnDestroy {
   }
 
   logout(): void {
+    this.closeMobileMenu();
+    this.closeProfileMenu();
     this.authService.logout();
-    this.showProfileMenu = false;
-    this.showMobileMenu = false;
     this.router.navigate(['/accueil']);
   }
 

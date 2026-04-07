@@ -10,7 +10,7 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, background 0.3s ease;
 }
 
 :host-context(.dark) .header {
@@ -76,7 +76,7 @@
   justify-content: center;
   color: #ffffff;
   box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .header-logo:hover .logo-icon {
@@ -169,7 +169,7 @@
   font-weight: 500;
   color: #475569;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background 0.3s ease;
   position: relative;
 }
 
@@ -230,7 +230,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 :host-context(.dark) .theme-toggle {
@@ -272,7 +272,7 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background 0.3s ease;
 }
 
 :host-context(.dark) .btn-login {
@@ -299,7 +299,7 @@
   border-radius: 0.5rem;
   cursor: pointer;
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .btn-demo:hover {
@@ -331,7 +331,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 :host-context(.dark) .profile-button {
@@ -404,6 +404,7 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   animation: dropdownFadeIn 0.2s ease;
+  z-index: 1002;
 }
 
 :host-context(.dark) .profile-dropdown {
@@ -513,7 +514,7 @@
   color: #475569;
   text-decoration: none;
   font-size: 0.875rem;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
   background: transparent;
   border: none;
   width: 100%;
@@ -572,7 +573,7 @@
   border: none;
   color: #64748b;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 @media (min-width: 1024px) {
@@ -607,11 +608,13 @@
   top: 5rem;
   left: 0;
   right: 0;
+  z-index: 1001;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   transform: translateY(-100%);
   opacity: 0;
-  transition: all 0.3s ease;
+  visibility: hidden;
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
   max-height: calc(100vh - 5rem);
   overflow-y: auto;
 }
@@ -624,11 +627,12 @@
 .mobile-nav.show {
   transform: translateY(0);
   opacity: 1;
+  visibility: visible;
 }
 
 @media (min-width: 1024px) {
   .mobile-nav {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -708,7 +712,7 @@
   font-weight: 500;
   color: #475569;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 :host-context(.dark) .mobile-nav-link {
@@ -748,7 +752,7 @@
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
   text-align: left;
   display: flex;
   align-items: center;
@@ -809,14 +813,16 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 1000;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .mobile-backdrop.show {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 

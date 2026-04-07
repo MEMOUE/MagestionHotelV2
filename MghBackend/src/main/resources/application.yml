@@ -67,7 +67,8 @@ jwt:
 
 # ── Configuration Application ──────────────────────────────────────
 app:
-  frontend-url: http://localhost:4200
+  frontend-url: https://magestionhotel.com
+  #http://localhost:4200
   #https://magestionhotel.com
 
 # Configuration de la documentation API (Swagger)
