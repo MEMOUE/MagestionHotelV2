@@ -1,6 +1,7 @@
 package com.mghbackend.service;
 
 import com.mghbackend.dto.ClientDto;
+import com.mghbackend.dto.request.AppliquerRemiseRequest;
 import com.mghbackend.dto.request.CreateReservationRequest;
 import com.mghbackend.dto.request.UpdateReservationRequest;
 import com.mghbackend.dto.ReservationDto;
@@ -8,6 +9,7 @@ import com.mghbackend.entity.*;
 import com.mghbackend.enums.*;
 import com.mghbackend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -81,6 +84,8 @@ public class ReservationService {
         reservation.setNombreAdultes(request.getNombreAdultes());
         reservation.setNombreEnfants(request.getNombreEnfants() != null ? request.getNombreEnfants() : 0);
         reservation.setPrixParNuit(chambre.getPrixParNuit());
+        reservation.setRemiseJournaliere(BigDecimal.ZERO);
+        reservation.setRemiseTotale(BigDecimal.ZERO);
         reservation.setMontantTotal(montantTotal);
         reservation.setStatut(StatutReservation.CONFIRMEE);
         reservation.setNotes(request.getNotes());
@@ -123,19 +128,91 @@ public class ReservationService {
         return convertToDto(saved);
     }
 
-    // ─── ✅ NOUVELLE MÉTHODE : Modification complète (dates, voyageurs, notes) ──
+    // ─── Appliquer une remise ─────────────────────────────────────────────────
+
+    public ReservationDto appliquerRemise(Long id, AppliquerRemiseRequest request) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+
+        if (reservation.getStatut() == StatutReservation.ANNULEE) {
+            throw new RuntimeException("Impossible d'appliquer une remise sur une réservation annulée");
+        }
+        if (reservation.getStatut() == StatutReservation.TERMINEE) {
+            throw new RuntimeException("Impossible d'appliquer une remise sur une réservation terminée");
+        }
+
+        BigDecimal remiseJourn = request.getRemiseJournaliere() != null
+                ? request.getRemiseJournaliere() : reservation.getRemiseJournaliere();
+        BigDecimal remiseTotal = request.getRemiseTotale() != null
+                ? request.getRemiseTotale() : reservation.getRemiseTotale();
+
+        // Validation : la remise journalière ne doit pas dépasser le prix par nuit
+        if (remiseJourn.compareTo(reservation.getPrixParNuit()) > 0) {
+            throw new RuntimeException("La remise journalière (" + remiseJourn +
+                    ") ne peut pas dépasser le prix par nuit (" + reservation.getPrixParNuit() + ")");
+        }
+        if (remiseJourn.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("La remise journalière ne peut pas être négative");
+        }
+        if (remiseTotal.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("La remise totale ne peut pas être négative");
+        }
+
+        reservation.setRemiseJournaliere(remiseJourn);
+        reservation.setRemiseTotale(remiseTotal);
+
+        // Recalcul du montant total
+        recalculerMontants(reservation);
+
+        Reservation saved = reservationRepository.save(reservation);
+
+        log.info("💸 Remise appliquée sur réservation {} : journalière={}, totale={}, nouveau total={}",
+                saved.getNumeroReservation(), remiseJourn, remiseTotal, saved.getMontantTotal());
+
+        return convertToDto(saved);
+    }
 
     /**
-     * Modification complète d'une réservation :
-     * - Changement des dates (prolongation ou réduction du séjour)
-     * - Changement du nombre de voyageurs
-     * - Mise à jour notes / demandes spéciales
-     *
-     * Logique financière lors d'un changement de dates :
-     * - Prolongation : le montantRestant augmente de la différence
-     * - Réduction    : le montantRestant diminue (sans passer en dessous de 0)
-     *                  Si montantPaye > nouveau montantTotal → remboursement signalé
+     * Recalcule montantTotal, montantRestant et statutPaiement
+     * en tenant compte des remises.
      */
+    private void recalculerMontants(Reservation reservation) {
+        BigDecimal prixEffectif = reservation.getPrixParNuit()
+                .subtract(reservation.getRemiseJournaliere() != null
+                        ? reservation.getRemiseJournaliere() : BigDecimal.ZERO);
+
+        BigDecimal montantBrut = prixEffectif.multiply(BigDecimal.valueOf(reservation.getNombreNuits()));
+
+        BigDecimal remiseTotale = reservation.getRemiseTotale() != null
+                ? reservation.getRemiseTotale() : BigDecimal.ZERO;
+
+        BigDecimal montantTotal = montantBrut.subtract(remiseTotale);
+        if (montantTotal.compareTo(BigDecimal.ZERO) < 0) {
+            montantTotal = BigDecimal.ZERO;
+        }
+
+        reservation.setMontantTotal(montantTotal);
+
+        BigDecimal montantPaye = reservation.getMontantPaye() != null
+                ? reservation.getMontantPaye() : BigDecimal.ZERO;
+        BigDecimal montantRestant = montantTotal.subtract(montantPaye);
+        if (montantRestant.compareTo(BigDecimal.ZERO) < 0) {
+            montantRestant = BigDecimal.ZERO;
+        }
+        reservation.setMontantRestant(montantRestant);
+
+        // Recalcul statut paiement
+        if (montantRestant.compareTo(BigDecimal.ZERO) <= 0) {
+            reservation.setStatutPaiement(StatutPaiement.PAYE);
+        } else if (montantPaye.compareTo(BigDecimal.ZERO) > 0) {
+            reservation.setStatutPaiement(StatutPaiement.ACOMPTE);
+        } else {
+            reservation.setStatutPaiement(StatutPaiement.NON_PAYE);
+        }
+    }
+
+    // ─── Modification complète ──────────────────────────────────────────────
+
     public ReservationDto modifierReservation(Long id, UpdateReservationRequest request) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
@@ -147,26 +224,21 @@ public class ReservationService {
             throw new RuntimeException("Impossible de modifier une réservation terminée");
         }
 
-        // ── Validation des nouvelles dates ──────────────────────────────────
         if (request.getDateArrivee().isAfter(request.getDateDepart())) {
             throw new RuntimeException("La date d'arrivée doit être avant la date de départ");
         }
 
-        // En cours → la date d'arrivée ne peut plus être modifiée
         if (reservation.getStatut() == StatutReservation.EN_COURS) {
             if (!request.getDateArrivee().equals(reservation.getDateArrivee())) {
                 throw new RuntimeException(
-                        "Le client est déjà arrivé : la date d'arrivée ne peut plus être modifiée. " +
-                                "Seule la date de départ peut être prolongée ou réduite.");
+                        "Le client est déjà arrivé : la date d'arrivée ne peut plus être modifiée.");
             }
         }
 
-        // ── Vérification disponibilité pour les nouvelles dates ─────────────
         boolean datesChanged = !request.getDateArrivee().equals(reservation.getDateArrivee())
                 || !request.getDateDepart().equals(reservation.getDateDepart());
 
         if (datesChanged) {
-            // On exclut la réservation courante du check de conflit
             List<Reservation> conflits = reservationRepository
                     .findReservationsByChambreAndPeriodeExcluding(
                             reservation.getChambre(),
@@ -174,60 +246,24 @@ public class ReservationService {
                             request.getDateDepart(),
                             id
                     );
-
             if (!conflits.isEmpty()) {
-                throw new RuntimeException(
-                        "La chambre n'est pas disponible pour ces nouvelles dates. " +
-                                "Une autre réservation existe sur cette période.");
+                throw new RuntimeException("La chambre n'est pas disponible pour ces nouvelles dates.");
             }
         }
-
-        // ── Recalcul financier ───────────────────────────────────────────────
-        BigDecimal ancienMontantTotal = reservation.getMontantTotal();
-        BigDecimal montantPaye        = reservation.getMontantPaye();
 
         long nouveauxNuits = ChronoUnit.DAYS.between(request.getDateArrivee(), request.getDateDepart());
-        BigDecimal nouveauMontantTotal = reservation.getPrixParNuit()
-                .multiply(BigDecimal.valueOf(nouveauxNuits));
 
-        // Différence : positif = prolongation (plus à payer), négatif = réduction
-        BigDecimal difference = nouveauMontantTotal.subtract(ancienMontantTotal);
-
-        BigDecimal nouveauMontantRestant;
-        if (difference.compareTo(BigDecimal.ZERO) >= 0) {
-            // Prolongation : montantRestant augmente
-            nouveauMontantRestant = reservation.getMontantRestant().add(difference);
-        } else {
-            // Réduction : montantRestant diminue, mais ≥ 0
-            // Si montantPaye > nouveauMontantTotal → surplus → à rembourser
-            nouveauMontantRestant = nouveauMontantTotal.subtract(montantPaye);
-            if (nouveauMontantRestant.compareTo(BigDecimal.ZERO) < 0) {
-                nouveauMontantRestant = BigDecimal.ZERO; // surplus → remboursement à gérer manuellement
-            }
-        }
-
-        // Recalcul du statut de paiement
-        StatutPaiement nouveauStatutPaiement;
-        if (nouveauMontantRestant.compareTo(BigDecimal.ZERO) <= 0) {
-            nouveauStatutPaiement = StatutPaiement.PAYE;
-        } else if (montantPaye.compareTo(BigDecimal.ZERO) > 0) {
-            nouveauStatutPaiement = StatutPaiement.ACOMPTE;
-        } else {
-            nouveauStatutPaiement = StatutPaiement.NON_PAYE;
-        }
-
-        // ── Mise à jour de la réservation ────────────────────────────────────
         reservation.setDateArrivee(request.getDateArrivee());
         reservation.setDateDepart(request.getDateDepart());
         reservation.setNombreNuits((int) nouveauxNuits);
         reservation.setNombreAdultes(request.getNombreAdultes());
         reservation.setNombreEnfants(request.getNombreEnfants() != null ? request.getNombreEnfants() : 0);
-        reservation.setMontantTotal(nouveauMontantTotal);
-        reservation.setMontantRestant(nouveauMontantRestant);
-        reservation.setStatutPaiement(nouveauStatutPaiement);
         reservation.setNotes(request.getNotes());
         reservation.setDemandesSpeciales(request.getDemandesSpeciales());
         reservation.setReferenceExterne(request.getReferenceExterne());
+
+        // Recalcul avec les remises existantes
+        recalculerMontants(reservation);
 
         return convertToDto(reservationRepository.save(reservation));
     }
@@ -376,7 +412,7 @@ public class ReservationService {
             throw new RuntimeException("Le montant doit être supérieur à 0");
         }
 
-        BigDecimal nouveauMontantPaye    = reservation.getMontantPaye().add(montant);
+        BigDecimal nouveauMontantPaye = reservation.getMontantPaye().add(montant);
         BigDecimal nouveauMontantRestant = reservation.getMontantTotal().subtract(nouveauMontantPaye);
 
         if (nouveauMontantRestant.compareTo(BigDecimal.ZERO) < 0) {
@@ -425,6 +461,8 @@ public class ReservationService {
         dto.setNombreAdultes(reservation.getNombreAdultes());
         dto.setNombreEnfants(reservation.getNombreEnfants());
         dto.setPrixParNuit(reservation.getPrixParNuit());
+        dto.setRemiseJournaliere(reservation.getRemiseJournaliere());
+        dto.setRemiseTotale(reservation.getRemiseTotale());
         dto.setMontantTotal(reservation.getMontantTotal());
         dto.setMontantPaye(reservation.getMontantPaye());
         dto.setMontantRestant(reservation.getMontantRestant());

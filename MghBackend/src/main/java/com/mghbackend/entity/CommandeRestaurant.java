@@ -19,19 +19,16 @@ public class CommandeRestaurant extends BaseEntity {
     @Column(nullable = false, unique = true, length = 20)
     private String numeroCommande;
 
-    // Client externe (sans compte)
     @Column(length = 100)
     private String nomClientExterne;
 
     @Column(length = 20)
     private String telephoneClientExterne;
 
-    // OU Client de l'hôtel (optionnel)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
     private Client client;
 
-    // OU Lien avec une réservation (optionnel)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reservation_id")
     private Reservation reservation;
@@ -46,6 +43,10 @@ public class CommandeRestaurant extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal montantTotal = BigDecimal.ZERO;
 
+    /** Remise globale soustraite du montant total */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal remiseTotale = BigDecimal.ZERO;
+
     @Column(precision = 10, scale = 2)
     private BigDecimal montantPaye = BigDecimal.ZERO;
 
@@ -59,7 +60,7 @@ public class CommandeRestaurant extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User serveur; // Employé qui prend la commande
+    private User serveur;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id", nullable = false)

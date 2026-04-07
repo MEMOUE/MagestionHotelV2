@@ -2,88 +2,34 @@
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
-  <!-- Header avec toolbar -->
   <p-toolbar>
     <ng-template pTemplate="left">
       <h2><i class="pi pi-calendar"></i> Gestion des Réservations</h2>
     </ng-template>
     <ng-template pTemplate="right">
-      <p-button 
-        label="Nouvelle Réservation" 
-        icon="pi pi-plus" 
-        (onClick)="createReservation()"
-        severity="success">
-      </p-button>
+      <p-button label="Nouvelle Réservation" icon="pi pi-plus" (onClick)="createReservation()" severity="success"></p-button>
     </ng-template>
   </p-toolbar>
 
-  <!-- Statistiques rapides -->
+  <!-- Statistiques -->
   <div class="grid mt-3 mb-3">
     <div class="col-12 md:col-6 lg:col-2">
-      <p-card>
-        <div class="flex align-items-center">
-          <i class="pi pi-list text-4xl text-primary mr-3"></i>
-          <div>
-            <div class="text-500 font-medium mb-1">Total</div>
-            <div class="text-900 text-xl font-bold">{{ stats.total }}</div>
-          </div>
-        </div>
-      </p-card>
+      <p-card><div class="flex align-items-center"><i class="pi pi-list text-4xl text-primary mr-3"></i><div><div class="text-500 font-medium mb-1">Total</div><div class="text-900 text-xl font-bold">{{ stats.total }}</div></div></div></p-card>
     </div>
     <div class="col-12 md:col-6 lg:col-2">
-      <p-card>
-        <div class="flex align-items-center">
-          <i class="pi pi-clock text-4xl text-orange-500 mr-3"></i>
-          <div>
-            <div class="text-500 font-medium mb-1">En attente</div>
-            <div class="text-900 text-xl font-bold">{{ stats.enAttente }}</div>
-          </div>
-        </div>
-      </p-card>
+      <p-card><div class="flex align-items-center"><i class="pi pi-clock text-4xl text-orange-500 mr-3"></i><div><div class="text-500 font-medium mb-1">En attente</div><div class="text-900 text-xl font-bold">{{ stats.enAttente }}</div></div></div></p-card>
     </div>
     <div class="col-12 md:col-6 lg:col-2">
-      <p-card>
-        <div class="flex align-items-center">
-          <i class="pi pi-check-circle text-4xl text-green-500 mr-3"></i>
-          <div>
-            <div class="text-500 font-medium mb-1">Confirmées</div>
-            <div class="text-900 text-xl font-bold">{{ stats.confirmees }}</div>
-          </div>
-        </div>
-      </p-card>
+      <p-card><div class="flex align-items-center"><i class="pi pi-check-circle text-4xl text-green-500 mr-3"></i><div><div class="text-500 font-medium mb-1">Confirmées</div><div class="text-900 text-xl font-bold">{{ stats.confirmees }}</div></div></div></p-card>
     </div>
     <div class="col-12 md:col-6 lg:col-2">
-      <p-card>
-        <div class="flex align-items-center">
-          <i class="pi pi-home text-4xl text-blue-500 mr-3"></i>
-          <div>
-            <div class="text-500 font-medium mb-1">En cours</div>
-            <div class="text-900 text-xl font-bold">{{ stats.enCours }}</div>
-          </div>
-        </div>
-      </p-card>
+      <p-card><div class="flex align-items-center"><i class="pi pi-home text-4xl text-blue-500 mr-3"></i><div><div class="text-500 font-medium mb-1">En cours</div><div class="text-900 text-xl font-bold">{{ stats.enCours }}</div></div></div></p-card>
     </div>
     <div class="col-12 md:col-6 lg:col-2">
-      <p-card>
-        <div class="flex align-items-center">
-          <i class="pi pi-sign-in text-4xl text-cyan-500 mr-3"></i>
-          <div>
-            <div class="text-500 font-medium mb-1">Arrivées aujourd'hui</div>
-            <div class="text-900 text-xl font-bold">{{ stats.aujourdhuiArrivees }}</div>
-          </div>
-        </div>
-      </p-card>
+      <p-card><div class="flex align-items-center"><i class="pi pi-sign-in text-4xl text-cyan-500 mr-3"></i><div><div class="text-500 font-medium mb-1">Arrivées aujourd'hui</div><div class="text-900 text-xl font-bold">{{ stats.aujourdhuiArrivees }}</div></div></div></p-card>
     </div>
     <div class="col-12 md:col-6 lg:col-2">
-      <p-card>
-        <div class="flex align-items-center">
-          <i class="pi pi-sign-out text-4xl text-purple-500 mr-3"></i>
-          <div>
-            <div class="text-500 font-medium mb-1">Départs aujourd'hui</div>
-            <div class="text-900 text-xl font-bold">{{ stats.aujourdhuiDeparts }}</div>
-          </div>
-        </div>
-      </p-card>
+      <p-card><div class="flex align-items-center"><i class="pi pi-sign-out text-4xl text-purple-500 mr-3"></i><div><div class="text-500 font-medium mb-1">Départs aujourd'hui</div><div class="text-900 text-xl font-bold">{{ stats.aujourdhuiDeparts }}</div></div></div></p-card>
     </div>
   </div>
 
@@ -95,186 +41,81 @@
           <label for="search">Recherche</label>
           <span class="p-input-icon-left w-full mt-2">
             <i class="pi pi-search"></i>
-            <input 
-              pInputText 
-              id="search"
-              [(ngModel)]="searchText"
-              (ngModelChange)="applyFilters()"
-              placeholder="N° réservation, client, chambre..."
-              class="w-full">
+            <input pInputText id="search" [(ngModel)]="searchText" (ngModelChange)="applyFilters()" placeholder="N° réservation, client, chambre..." class="w-full">
           </span>
         </div>
-
         <div class="col-12 md:col-3">
           <label for="statut">Statut</label>
-          <p-select
-            id="statut"
-            [(ngModel)]="selectedStatut"
-            [options]="statutOptions"
-            (onChange)="applyFilters()"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Tous les statuts"
-            class="w-full mt-2">
-          </p-select>
+          <p-select id="statut" [(ngModel)]="selectedStatut" [options]="statutOptions" (onChange)="applyFilters()" optionLabel="label" optionValue="value" placeholder="Tous les statuts" class="w-full mt-2"></p-select>
         </div>
-
         <div class="col-12 md:col-3">
           <label for="dateDebut">Date d'arrivée (début)</label>
-          <p-datepicker
-            id="dateDebut"
-            [(ngModel)]="dateDebutFilter"
-            (onSelect)="applyFilters()"
-            dateFormat="dd/mm/yy"
-            placeholder="Sélectionner une date"
-            [showIcon]="true"
-            class="w-full mt-2">
-          </p-datepicker>
+          <p-datepicker id="dateDebut" [(ngModel)]="dateDebutFilter" (onSelect)="applyFilters()" dateFormat="dd/mm/yy" placeholder="Sélectionner une date" [showIcon]="true" class="w-full mt-2"></p-datepicker>
         </div>
-
         <div class="col-12 md:col-3">
           <label for="dateFin">Date d'arrivée (fin)</label>
-          <p-datepicker
-            id="dateFin"
-            [(ngModel)]="dateFinFilter"
-            (onSelect)="applyFilters()"
-            dateFormat="dd/mm/yy"
-            placeholder="Sélectionner une date"
-            [showIcon]="true"
-            class="w-full mt-2">
-          </p-datepicker>
+          <p-datepicker id="dateFin" [(ngModel)]="dateFinFilter" (onSelect)="applyFilters()" dateFormat="dd/mm/yy" placeholder="Sélectionner une date" [showIcon]="true" class="w-full mt-2"></p-datepicker>
         </div>
-
         <div class="col-12">
           <div class="flex justify-content-end mt-2">
-            <p-button 
-              label="Réinitialiser" 
-              icon="pi pi-refresh" 
-              (onClick)="clearFilters()"
-              severity="secondary"
-              [outlined]="true">
-            </p-button>
+            <p-button label="Réinitialiser" icon="pi pi-refresh" (onClick)="clearFilters()" severity="secondary" [outlined]="true"></p-button>
           </div>
         </div>
       </div>
     </div>
   </p-card>
 
-  <!-- Table des réservations -->
+  <!-- Table -->
   <p-card class="mt-3">
-    <p-table 
-      [value]="filteredReservations" 
-      [loading]="loading"
-      [paginator]="true" 
-      [rows]="10"
-      [rowsPerPageOptions]="[10, 25, 50]"
-      [showCurrentPageReport]="true"
-      currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} réservations"
-      [globalFilterFields]="['numeroReservation', 'clientNom', 'clientPrenom', 'chambreNumero']"
-      responsiveLayout="scroll">
-      
+    <p-table [value]="filteredReservations" [loading]="loading" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]" [showCurrentPageReport]="true" currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} réservations" responsiveLayout="scroll">
+
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="numeroReservation">
-            N° Réservation <p-sortIcon field="numeroReservation"></p-sortIcon>
-          </th>
-          <th pSortableColumn="clientNom">
-            Client <p-sortIcon field="clientNom"></p-sortIcon>
-          </th>
-          <th pSortableColumn="chambreNumero">
-            Chambre <p-sortIcon field="chambreNumero"></p-sortIcon>
-          </th>
-          <th pSortableColumn="dateArrivee">
-            Arrivée <p-sortIcon field="dateArrivee"></p-sortIcon>
-          </th>
-          <th pSortableColumn="dateDepart">
-            Départ <p-sortIcon field="dateDepart"></p-sortIcon>
-          </th>
-          <th pSortableColumn="nombreNuits">
-            Nuits <p-sortIcon field="nombreNuits"></p-sortIcon>
-          </th>
-          <th pSortableColumn="montantTotal">
-            Montant <p-sortIcon field="montantTotal"></p-sortIcon>
-          </th>
-          <th pSortableColumn="statut">
-            Statut <p-sortIcon field="statut"></p-sortIcon>
-          </th>
-          <th pSortableColumn="statutPaiement">
-            Paiement <p-sortIcon field="statutPaiement"></p-sortIcon>
-          </th>
+          <th pSortableColumn="numeroReservation">N° Réservation <p-sortIcon field="numeroReservation"></p-sortIcon></th>
+          <th pSortableColumn="clientNom">Client <p-sortIcon field="clientNom"></p-sortIcon></th>
+          <th pSortableColumn="chambreNumero">Chambre <p-sortIcon field="chambreNumero"></p-sortIcon></th>
+          <th pSortableColumn="dateArrivee">Arrivée <p-sortIcon field="dateArrivee"></p-sortIcon></th>
+          <th pSortableColumn="dateDepart">Départ <p-sortIcon field="dateDepart"></p-sortIcon></th>
+          <th pSortableColumn="nombreNuits">Nuits <p-sortIcon field="nombreNuits"></p-sortIcon></th>
+          <th pSortableColumn="montantTotal">Montant <p-sortIcon field="montantTotal"></p-sortIcon></th>
+          <th pSortableColumn="statut">Statut <p-sortIcon field="statut"></p-sortIcon></th>
+          <th pSortableColumn="statutPaiement">Paiement <p-sortIcon field="statutPaiement"></p-sortIcon></th>
           <th>Actions</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-reservation>
         <tr>
-          <td>
-            <span class="font-semibold">{{ reservation.numeroReservation }}</span>
-          </td>
+          <td><span class="font-semibold">{{ reservation.numeroReservation }}</span></td>
           <td>
             {{ reservation.clientPrenom }} {{ reservation.clientNom }}<br>
             <small class="text-500">{{ reservation.clientTelephone }}</small>
           </td>
-          <td>
-            <span class="font-semibold">{{ reservation.chambreNumero }}</span>
-          </td>
+          <td><span class="font-semibold">{{ reservation.chambreNumero }}</span></td>
           <td>{{ formatDate(reservation.dateArrivee) }}</td>
           <td>{{ formatDate(reservation.dateDepart) }}</td>
-          <td class="text-center">
-            <span class="p-badge">{{ reservation.nombreNuits }}</span>
-          </td>
-          <td class="font-semibold">{{ formatCurrency(reservation.montantTotal) }}</td>
+          <td class="text-center"><span class="p-badge">{{ reservation.nombreNuits }}</span></td>
           <td>
-            <p-tag 
-              [value]="getStatutLabel(reservation.statut)" 
-              [severity]="getStatutSeverity(reservation.statut)">
-            </p-tag>
+            <span class="font-semibold">{{ formatCurrency(reservation.montantTotal) }}</span>
+            <div *ngIf="(reservation.remiseJournaliere || 0) > 0 || (reservation.remiseTotale || 0) > 0">
+              <small style="color:#b8860b">
+                <span *ngIf="(reservation.remiseJournaliere || 0) > 0">-{{ formatCurrency(reservation.remiseJournaliere) }}/nuit</span>
+                <span *ngIf="(reservation.remiseTotale || 0) > 0"> | -{{ formatCurrency(reservation.remiseTotale) }} total</span>
+              </small>
+            </div>
           </td>
-          <td>
-            <p-tag 
-              [value]="getStatutPaiementLabel(reservation.statutPaiement)" 
-              [severity]="getStatutPaiementSeverity(reservation.statutPaiement)">
-            </p-tag>
-          </td>
+          <td><p-tag [value]="getStatutLabel(reservation.statut)" [severity]="getStatutSeverity(reservation.statut)"></p-tag></td>
+          <td><p-tag [value]="getStatutPaiementLabel(reservation.statutPaiement)" [severity]="getStatutPaiementSeverity(reservation.statutPaiement)"></p-tag></td>
           <td>
             <div class="flex gap-2">
-              <p-button 
-                icon="pi pi-eye" 
-                (onClick)="viewReservation(reservation)"
-                severity="info"
-                [rounded]="true"
-                [text]="true"
-                pTooltip="Voir les détails">
-              </p-button>
+              <p-button icon="pi pi-eye" (onClick)="viewReservation(reservation)" severity="info" [rounded]="true" [text]="true" pTooltip="Voir les détails"></p-button>
+              <p-button *ngIf="reservation.statut === 'CONFIRMEE'" icon="pi pi-sign-in" (onClick)="doCheckin(reservation)" severity="success" [rounded]="true" [text]="true" pTooltip="Check-in"></p-button>
+              <p-button *ngIf="reservation.statut === 'EN_COURS'" icon="pi pi-sign-out" (onClick)="doCheckout(reservation)" severity="warn" [rounded]="true" [text]="true" pTooltip="Check-out"></p-button>
 
-              <p-button 
-                *ngIf="reservation.statut === 'CONFIRMEE'"
-                icon="pi pi-sign-in" 
-                (onClick)="doCheckin(reservation)"
-                severity="success"
-                [rounded]="true"
-                [text]="true"
-                pTooltip="Check-in">
-              </p-button>
+              <!-- ✅ Bouton Remise -->
+              <p-button *ngIf="canApplyRemise(reservation)" icon="pi pi-percentage" (onClick)="openRemiseDialog(reservation)" severity="warn" [rounded]="true" [text]="true" pTooltip="Appliquer une remise"></p-button>
 
-              <p-button 
-                *ngIf="reservation.statut === 'EN_COURS'"
-                icon="pi pi-sign-out" 
-                (onClick)="doCheckout(reservation)"
-                severity="warn" 
-                [rounded]="true"
-                [text]="true"
-                pTooltip="Check-out">
-                </p-button>
-              <p-button 
-                *ngIf="reservation.statut !== 'TERMINEE' && reservation.statut !== 'ANNULEE'"
-                icon="pi pi-times" 
-                (onClick)="cancelReservation(reservation)"
-                severity="danger"
-                [rounded]="true"
-                [text]="true"
-                pTooltip="Annuler">
-              </p-button>
+              <p-button *ngIf="reservation.statut !== 'TERMINEE' && reservation.statut !== 'ANNULEE'" icon="pi pi-times" (onClick)="cancelReservation(reservation)" severity="danger" [rounded]="true" [text]="true" pTooltip="Annuler"></p-button>
             </div>
           </td>
         </tr>
@@ -292,4 +133,63 @@
       </ng-template>
     </p-table>
   </p-card>
+
+  <!-- ✅ Dialog Remise Réservation -->
+  <p-dialog
+    header="Appliquer une remise"
+    [(visible)]="showRemiseDialog"
+    [modal]="true"
+    [style]="{width: '500px'}"
+    [draggable]="false"
+    [resizable]="false">
+
+    <div class="grid">
+      <div class="col-12">
+        <p class="mb-3">
+          Réservation <strong>{{ remiseReservationNumero }}</strong>
+          — Prix par nuit : <strong>{{ formatCurrency(remisePrixParNuit) }}</strong>
+        </p>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <label for="remiseJourn">Remise journalière (FCFA)</label>
+        <p-inputNumber
+          id="remiseJourn"
+          [(ngModel)]="remiseJournaliere"
+          mode="decimal"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="0"
+          suffix=" FCFA"
+          placeholder="Ex: 3000"
+          [min]="0"
+          [max]="remisePrixParNuit"
+          class="w-full mt-2">
+        </p-inputNumber>
+        <small class="text-500 block mt-1">
+          Prix effectif / nuit : <strong>{{ formatCurrency(remisePrixParNuit - remiseJournaliere) }}</strong>
+        </small>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <label for="remiseTotal">Remise totale (FCFA)</label>
+        <p-inputNumber
+          id="remiseTotal"
+          [(ngModel)]="remiseTotale"
+          mode="decimal"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="0"
+          suffix=" FCFA"
+          placeholder="Ex: 5000"
+          [min]="0"
+          class="w-full mt-2">
+        </p-inputNumber>
+        <small class="text-500 block mt-1">Soustraite du montant total</small>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Annuler" icon="pi pi-times" (onClick)="showRemiseDialog = false" severity="secondary" [text]="true"></p-button>
+      <p-button label="Appliquer la remise" icon="pi pi-check" (onClick)="saveRemise()" severity="success"></p-button>
+    </ng-template>
+  </p-dialog>
 </div>

@@ -2,7 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environment/environment';
-import { Reservation, CreateReservationRequest, StatutReservation } from '../models/reservation.model';
+import {
+  Reservation,
+  CreateReservationRequest,
+  AppliquerRemiseReservationRequest,
+  StatutReservation
+} from '../models/reservation.model';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -10,9 +15,8 @@ interface ApiResponse<T> {
   data: T;
 }
 
-// ✅ Nouveau DTO aligné sur le backend UpdateReservationRequest
 export interface ModifierReservationRequest {
-  dateArrivee: string;   // format YYYY-MM-DD
+  dateArrivee: string;
   dateDepart: string;
   nombreAdultes: number;
   nombreEnfants: number;
@@ -74,13 +78,19 @@ export class ReservationService {
     return this.http.get<ApiResponse<Reservation[]>>(`${this.apiUrl}/search`, { params });
   }
 
-  // ✅ NOUVELLE méthode : modification complète (dates, voyageurs, notes)
-  // Appelle PUT /api/reservations/{id}/modifier
   modifierReservation(
     id: number,
     request: ModifierReservationRequest
   ): Observable<ApiResponse<Reservation>> {
     return this.http.put<ApiResponse<Reservation>>(`${this.apiUrl}/${id}/modifier`, request);
+  }
+
+  // ✅ NOUVEAU : Appliquer une remise sur une réservation
+  appliquerRemise(
+    id: number,
+    request: AppliquerRemiseReservationRequest
+  ): Observable<ApiResponse<Reservation>> {
+    return this.http.put<ApiResponse<Reservation>>(`${this.apiUrl}/${id}/remise`, request);
   }
 
   doCheckin(id: number): Observable<ApiResponse<Reservation>> {

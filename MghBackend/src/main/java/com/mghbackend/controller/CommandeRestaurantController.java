@@ -55,7 +55,6 @@ public class CommandeRestaurantController {
         }
     }
 
-    // ✅ CORRIGÉ : @PathVariable Long (pas long sans annotation)
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('HOTEL') or hasAnyAuthority('PERMISSION_VOIR_COMMANDES')")
     public ResponseEntity<ApiResponse<CommandeRestaurantDto>> getCommande(
@@ -91,6 +90,22 @@ public class CommandeRestaurantController {
         try {
             CommandeRestaurantDto commande = commandeService.addPaiement(id, montant);
             return ResponseEntity.ok(ApiResponse.success("Paiement enregistré", commande));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // ─── ✅ NOUVEAU : Appliquer une remise totale sur une commande ─────────────
+
+    @PutMapping("/{id}/remise")
+    @PreAuthorize("hasRole('HOTEL') or hasAuthority('PERMISSION_MODIFIER_COMMANDE')")
+    public ResponseEntity<ApiResponse<CommandeRestaurantDto>> appliquerRemise(
+            @PathVariable Long id,
+            @RequestParam BigDecimal montant) {
+        try {
+            CommandeRestaurantDto commande = commandeService.appliquerRemise(id, montant);
+            return ResponseEntity.ok(ApiResponse.success("Remise appliquée avec succès", commande));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));

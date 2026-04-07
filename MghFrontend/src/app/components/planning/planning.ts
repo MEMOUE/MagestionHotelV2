@@ -7,8 +7,8 @@ import { ChambreService, Chambre } from '../../services/chambre.service';
 import { HotelProfileService, HotelProfile } from '../../services/hotel-profile.service';
 import { AuthService } from '../../services/auth.service';
 import { Reservation, StatutReservation } from '../../models/reservation.model';
-import {RestaurantService} from '../../services/restaurant.service';
-import {CommandeRestaurant} from '../../models/restaurant.model';
+import { RestaurantService } from '../../services/restaurant.service';
+import { CommandeRestaurant } from '../../models/restaurant.model';
 
 @Component({
   selector: 'app-planning',
@@ -34,9 +34,15 @@ export class Planning implements OnInit {
   endDate: Date = new Date();
   daysCount = 30;
 
+  // Paiement
   showPaiementForm = false;
   paiementMontant = 0;
   paiementMode = 'ESPECES';
+
+  // ✅ Remise
+  showRemiseForm = false;
+  remiseJournaliere = 0;
+  remiseTotaleRes = 0;
 
   modesPaiement = [
     { value: 'ESPECES',        label: 'Espèces' },
@@ -48,50 +54,13 @@ export class Planning implements OnInit {
     { value: 'VIREMENT',       label: 'Virement' },
   ];
 
-  // ✅ Couleurs fortes et contrastées — chaque statut est visuellement distinct
   statutConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-    // 🟡 Jaune vif — en attente, visible mais pas urgent
-    EN_ATTENTE: {
-      label : 'En attente',
-      color : '#78350f',   // texte marron foncé lisible
-      bg    : '#fbbf24',   // fond jaune vif
-      border: '#b45309',   // bordure ambre foncée
-    },
-    // 🔵 Bleu roi — confirmée, prête à démarrer
-    CONFIRMEE: {
-      label : 'Confirmée',
-      color : '#eff6ff',   // texte blanc-bleu
-      bg    : '#1d4ed8',   // fond bleu roi profond
-      border: '#1e3a8a',   // bordure bleu marine
-    },
-    // 🟢 Vert franc — client en séjour actif
-    EN_COURS: {
-      label : 'En cours',
-      color : '#f0fdf4',   // texte blanc-vert
-      bg    : '#16a34a',   // fond vert vif
-      border: '#14532d',   // bordure vert sombre
-    },
-    // 🟣 Violet — séjour terminé, archivé
-    TERMINEE: {
-      label : 'Terminée',
-      color : '#fdf4ff',   // texte blanc-violet
-      bg    : '#7c3aed',   // fond violet intense
-      border: '#4c1d95',   // bordure violet nuit
-    },
-    // 🔴 Rouge franc — annulée
-    ANNULEE: {
-      label : 'Annulée',
-      color : '#fff1f2',   // texte blanc-rose
-      bg    : '#dc2626',   // fond rouge vif
-      border: '#7f1d1d',   // bordure rouge nuit
-    },
-    // 🟠 Orange brûlé — no-show
-    NO_SHOW: {
-      label : 'No-show',
-      color : '#fff7ed',   // texte blanc-orangé
-      bg    : '#ea580c',   // fond orange brûlé
-      border: '#7c2d12',   // bordure brun-orange
-    },
+    EN_ATTENTE: { label: 'En attente', color: '#78350f', bg: '#fbbf24', border: '#b45309' },
+    CONFIRMEE:  { label: 'Confirmée',  color: '#eff6ff', bg: '#1d4ed8', border: '#1e3a8a' },
+    EN_COURS:   { label: 'En cours',   color: '#f0fdf4', bg: '#16a34a', border: '#14532d' },
+    TERMINEE:   { label: 'Terminée',   color: '#fdf4ff', bg: '#7c3aed', border: '#4c1d95' },
+    ANNULEE:    { label: 'Annulée',    color: '#fff1f2', bg: '#dc2626', border: '#7f1d1d' },
+    NO_SHOW:    { label: 'No-show',    color: '#fff7ed', bg: '#ea580c', border: '#7c2d12' },
   };
 
   constructor(
@@ -198,11 +167,7 @@ export class Planning implements OnInit {
   getCellStyle(res: Reservation | null): Record<string, string> {
     if (!res) return {};
     const cfg = this.statutConfig[res.statut || ''] || { bg: '#6b7280', border: '#4b5563', color: '#fff' };
-    return {
-      'background-color': cfg.bg,
-      // Bordure gauche épaisse = délimitation nette entre blocs de réservation
-      'border-left': `4px solid ${cfg.border}`,
-    };
+    return { 'background-color': cfg.bg, 'border-left': `4px solid ${cfg.border}` };
   }
 
   getStatutCfg(statut?: string) {
@@ -217,6 +182,7 @@ export class Planning implements OnInit {
       this.selectedReservation = { ...res };
       this.showModal = true;
       this.showPaiementForm = false;
+      this.showRemiseForm = false;
       this.paiementMontant = 0;
     }
   }
@@ -225,6 +191,7 @@ export class Planning implements OnInit {
     this.showModal = false;
     this.selectedReservation = null;
     this.showPaiementForm = false;
+    this.showRemiseForm = false;
   }
 
   canCheckin():  boolean { return this.selectedReservation?.statut === StatutReservation.CONFIRMEE; }
@@ -238,6 +205,36 @@ export class Planning implements OnInit {
     return s !== StatutReservation.ANNULEE &&
       s !== StatutReservation.TERMINEE &&
       s !== StatutReservation.NO_SHOW;
+  }
+  canApplyRemise(): boolean {
+    const s = this.selectedReservation?.statut;
+    return s !== StatutReservation.ANNULEE && s !== StatutReservation.TERMINEE;
+  }
+
+  // ✅ Ouvrir le formulaire remise avec les valeurs existantes
+  openRemiseForm(): void {
+    this.showRemiseForm = true;
+    this.showPaiementForm = false;
+    this.remiseJournaliere = this.selectedReservation?.remiseJournaliere || 0;
+    this.remiseTotaleRes = this.selectedReservation?.remiseTotale || 0;
+  }
+
+  // ✅ Soumettre la remise
+  submitRemise(): void {
+    if (!this.selectedReservation?.id) return;
+    this.reservationService.appliquerRemise(this.selectedReservation.id, {
+      remiseJournaliere: this.remiseJournaliere,
+      remiseTotale: this.remiseTotaleRes
+    }).subscribe({
+      next: (resp) => {
+        const data = (resp as any)?.data ?? resp;
+        this.selectedReservation = data;
+        this.showRemiseForm = false;
+        this.loadData();
+        alert('Remise appliquée avec succès !');
+      },
+      error: (e) => alert('Erreur remise : ' + (e?.error?.message || e.message)),
+    });
   }
 
   doCheckin(): void {
@@ -306,19 +303,31 @@ export class Planning implements OnInit {
     const now     = new Date().toLocaleDateString('fr-FR');
     const cfg     = this.getStatutCfg(res.statut);
 
-    const montantHebergement = (res.prixParNuit || 0) * (res.nombreNuits || 0);
+    const prixEffectif = (res.prixParNuit || 0) - (res.remiseJournaliere || 0);
+    const montantHebergement = prixEffectif * (res.nombreNuits || 0);
 
     let lignesHTML = `
     <tr class="section-header"><td colspan="4"><strong>HÉBERGEMENT</strong></td></tr>
     <tr>
-      <td>Chambre ${res.chambreNumero || res.chambreId}</td>
+      <td>Chambre ${res.chambreNumero || res.chambreId}${(res.remiseJournaliere || 0) > 0 ? ' <small style="color:#b8860b">(remise ' + (res.remiseJournaliere || 0).toLocaleString('fr-FR') + ' F CFA/nuit)</small>' : ''}</td>
       <td class="center">${res.nombreNuits || 0}</td>
-      <td class="right">${(res.prixParNuit || 0).toLocaleString('fr-FR')} F CFA</td>
+      <td class="right">${prixEffectif.toLocaleString('fr-FR')} F CFA</td>
       <td class="right">${montantHebergement.toLocaleString('fr-FR')} F CFA</td>
-    </tr>
+    </tr>`;
+
+    if ((res.remiseTotale || 0) > 0) {
+      lignesHTML += `
+      <tr>
+        <td colspan="3" class="right" style="color:#b8860b"><em>Remise totale</em></td>
+        <td class="right" style="color:#b8860b"><em>-${(res.remiseTotale || 0).toLocaleString('fr-FR')} F CFA</em></td>
+      </tr>`;
+    }
+
+    const sousTotal = montantHebergement - (res.remiseTotale || 0);
+    lignesHTML += `
     <tr class="subtotal-row">
       <td colspan="3" class="right"><strong>Sous-total Hébergement</strong></td>
-      <td class="right"><strong>${montantHebergement.toLocaleString('fr-FR')} F CFA</strong></td>
+      <td class="right"><strong>${Math.max(0, sousTotal).toLocaleString('fr-FR')} F CFA</strong></td>
     </tr>`;
 
     let montantRestaurant = 0;
@@ -336,15 +345,23 @@ export class Planning implements OnInit {
             <td class="right">${st.toLocaleString('fr-FR')} F CFA</td>
           </tr>`;
         }
+        if ((cmd.remiseTotale || 0) > 0) {
+          montantRestaurant -= (cmd.remiseTotale || 0);
+          lignesHTML += `
+          <tr>
+            <td colspan="3" class="right" style="color:#b8860b"><em>Remise commande ${cmd.numeroCommande}</em></td>
+            <td class="right" style="color:#b8860b"><em>-${(cmd.remiseTotale || 0).toLocaleString('fr-FR')} F CFA</em></td>
+          </tr>`;
+        }
       }
       lignesHTML += `
       <tr class="subtotal-row">
         <td colspan="3" class="right"><strong>Sous-total Restaurant (${commandes.length} cmd)</strong></td>
-        <td class="right"><strong>${montantRestaurant.toLocaleString('fr-FR')} F CFA</strong></td>
+        <td class="right"><strong>${Math.max(0, montantRestaurant).toLocaleString('fr-FR')} F CFA</strong></td>
       </tr>`;
     }
 
-    const totalGeneral   = montantHebergement + montantRestaurant;
+    const totalGeneral   = res.montantTotal || 0;
     const montantPaye    = res.montantPaye    || 0;
     const montantRestant = Math.max(0, totalGeneral - montantPaye);
 
@@ -410,9 +427,6 @@ td{padding:8px 12px;border-bottom:1px solid #eee;font-size:12px}
   <tbody>${lignesHTML}</tbody>
 </table>
 <div class="totals"><div class="totals-box">
-  ${commandes.length > 0 ? `
-  <div class="totals-row"><span>Hébergement</span><span>${montantHebergement.toLocaleString('fr-FR')} F CFA</span></div>
-  <div class="totals-row"><span>Restaurant</span><span>${montantRestaurant.toLocaleString('fr-FR')} F CFA</span></div>` : ''}
   <div class="totals-row grand-total"><span>TOTAL GÉNÉRAL</span><span>${totalGeneral.toLocaleString('fr-FR')} F CFA</span></div>
   <div class="totals-row paye"><span>Montant payé</span><span>${montantPaye.toLocaleString('fr-FR')} F CFA</span></div>
   <div class="totals-row ${montantRestant > 0 ? 'reste' : 'ok'}">

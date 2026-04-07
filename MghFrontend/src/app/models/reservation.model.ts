@@ -14,6 +14,11 @@ export interface Reservation {
   nombreAdultes: number;
   nombreEnfants: number;
   prixParNuit?: number;
+
+  // Remises
+  remiseJournaliere?: number;
+  remiseTotale?: number;
+
   montantTotal?: number;
   montantPaye?: number;
   montantRestant?: number;
@@ -46,6 +51,11 @@ export interface CreateReservationRequest {
   notes?: string;
   demandesSpeciales?: string;
   referenceExterne?: string;
+}
+
+export interface AppliquerRemiseReservationRequest {
+  remiseJournaliere?: number;
+  remiseTotale?: number;
 }
 
 export interface Client {

@@ -15,6 +15,8 @@ import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
+import { DialogModule } from 'primeng/dialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { RestaurantService } from '../../../services/restaurant.service';
@@ -34,7 +36,7 @@ type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast
     TableModule, ButtonModule, InputTextModule,
     TagModule, CardModule, ToolbarModule, ToastModule,
     ConfirmDialogModule, SelectModule, DatePickerModule,
-    TooltipModule, DividerModule
+    TooltipModule, DividerModule, DialogModule, InputNumberModule
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './listeresto.html',
@@ -42,27 +44,29 @@ type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast
 })
 export class Listeresto implements OnInit {
 
-  // ── Données ──────────────────────────────────────────────────────────────────
   commandes: CommandeRestaurant[] = [];
   commandesFiltrees: CommandeRestaurant[] = [];
   loading = false;
 
-  // ── Filtres ───────────────────────────────────────────────────────────────────
   searchValue    = '';
   selectedStatut = '';
   dateDebut: Date | null = null;
   dateFin:   Date | null = null;
 
-  // ── Stats — calculées sur les commandes FILTRÉES ──────────────────────────────
   totalCommandes     = 0;
   commandesEnAttente = 0;
   commandesEnCours   = 0;
   chiffreAffaires    = 0;
 
-  // ── Profil hôtel ──────────────────────────────────────────────────────────────
   hotelProfile: HotelProfile | null = null;
 
-  // ── Options ───────────────────────────────────────────────────────────────────
+  // ✅ Remise dialog
+  showRemiseDialog = false;
+  remiseMontant = 0;
+  remiseCommandeId: number | null = null;
+  remiseCommandeNumero = '';
+  remiseMontantBrut = 0;
+
   statutOptions = [
     { label: 'Tous les statuts',  value: '' },
     { label: 'En attente',        value: StatutCommandeRestaurant.EN_ATTENTE },
@@ -89,8 +93,6 @@ export class Listeresto implements OnInit {
     this.loadCommandes();
   }
 
-  // ── Chargement ────────────────────────────────────────────────────────────────
-
   loadCommandes(): void {
     this.loading = true;
     this.restaurantService.getCommandes().subscribe({
@@ -108,12 +110,9 @@ export class Listeresto implements OnInit {
     });
   }
 
-  // ── Filtrage + stats dynamiques ───────────────────────────────────────────────
-
   applyFilters(): void {
     let filtered = [...this.commandes];
 
-    // Filtre texte
     if (this.searchValue.trim()) {
       const s = this.searchValue.toLowerCase().trim();
       filtered = filtered.filter(c =>
@@ -125,19 +124,16 @@ export class Listeresto implements OnInit {
       );
     }
 
-    // Filtre statut
     if (this.selectedStatut) {
       filtered = filtered.filter(c => c.statut === this.selectedStatut);
     }
 
-    // Filtre date début
     if (this.dateDebut) {
       const debut = new Date(this.dateDebut);
       debut.setHours(0, 0, 0, 0);
       filtered = filtered.filter(c => c.dateCommande && new Date(c.dateCommande) >= debut);
     }
 
-    // Filtre date fin
     if (this.dateFin) {
       const fin = new Date(this.dateFin);
       fin.setHours(23, 59, 59, 999);
@@ -148,7 +144,6 @@ export class Listeresto implements OnInit {
     this.recalculerStats();
   }
 
-  /** Les 4 cartes reflètent toujours les résultats après filtrage */
   private recalculerStats(): void {
     const f = this.commandesFiltrees;
     this.totalCommandes     = f.length;
@@ -175,16 +170,12 @@ export class Listeresto implements OnInit {
     return !!(this.searchValue || this.selectedStatut || this.dateDebut || this.dateFin);
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────────
-
   nouvelleCommande(): void { this.router.navigate(['/restauration/create']); }
 
   viewCommande(commande: CommandeRestaurant): void {
     if (!commande.id) return;
     this.router.navigate(['/restauration', commande.id]);
   }
-
-  // ── Actions ───────────────────────────────────────────────────────────────────
 
   changerStatut(commande: CommandeRestaurant, statut: StatutCommandeRestaurant): void {
     this.confirmationService.confirm({
@@ -228,7 +219,49 @@ export class Listeresto implements OnInit {
     });
   }
 
-  // ── Impression ────────────────────────────────────────────────────────────────
+  // ✅ Ouvrir le dialog de remise
+  openRemiseDialog(commande: CommandeRestaurant): void {
+    this.remiseCommandeId = commande.id!;
+    this.remiseCommandeNumero = commande.numeroCommande || '#' + commande.id;
+    this.remiseMontant = commande.remiseTotale || 0;
+    // Calculer le montant brut (total + remise existante)
+    this.remiseMontantBrut = commande.montantTotal + (commande.remiseTotale || 0);
+    this.showRemiseDialog = true;
+  }
+
+  // ✅ Appliquer la remise
+  saveRemise(): void {
+    if (!this.remiseCommandeId) return;
+    if (this.remiseMontant < 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Attention', detail: 'La remise ne peut pas être négative' });
+      return;
+    }
+    if (this.remiseMontant > this.remiseMontantBrut) {
+      this.messageService.add({ severity: 'warn', summary: 'Attention', detail: 'La remise ne peut pas dépasser le montant brut' });
+      return;
+    }
+
+    this.restaurantService.appliquerRemise(this.remiseCommandeId, this.remiseMontant).subscribe({
+      next: r => {
+        if (r.success) {
+          this.messageService.add({ severity: 'success', summary: 'Succès', detail: 'Remise appliquée avec succès' });
+          this.showRemiseDialog = false;
+          this.loadCommandes();
+        }
+      },
+      error: e => this.messageService.add({
+        severity: 'error', summary: 'Erreur',
+        detail: e.error?.message || "Impossible d'appliquer la remise"
+      })
+    });
+  }
+
+  canApplyRemise(c: CommandeRestaurant): boolean {
+    return c.statut !== StatutCommandeRestaurant.ANNULEE &&
+      c.statut !== StatutCommandeRestaurant.PAYEE;
+  }
+
+  // ── Impression (same as before, with remise display) ──
 
   imprimerRecu(commande: CommandeRestaurant): void {
     const hotel     = this.hotelProfile;
@@ -253,6 +286,10 @@ export class Listeresto implements OnInit {
       </tr>
       ${l.notes ? `<tr><td colspan="4" style="font-size:11px;color:#666;padding-left:8px;padding-top:0">↳ ${l.notes}</td></tr>` : ''}
     `).join('');
+
+    const remiseHTML = (commande.remiseTotale || 0) > 0
+      ? `<div class="totals-row" style="color:#b8860b"><span>Remise</span><span>-${(commande.remiseTotale || 0).toLocaleString('fr-FR')} FCFA</span></div>`
+      : '';
 
     const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
 <title>Reçu ${commande.numeroCommande || commande.id}</title>
@@ -279,14 +316,8 @@ tbody tr td{padding:5px 2px;vertical-align:top}
 </style></head><body>
 <div class="header">
   <h1>${hotelNom}</h1>
-  <div class="sub">
-    ${hotelAdr  ? hotelAdr + '<br>'  : ''}
-    ${hotelTel  ? hotelTel + '<br>'  : ''}
-    ${hotelMail ? hotelMail           : ''}
-  </div>
-  <div style="margin-top:8px;font-weight:700;font-size:13px">
-    REÇU – ${commande.numeroCommande || '#' + commande.id}
-  </div>
+  <div class="sub">${hotelAdr ? hotelAdr+'<br>' : ''}${hotelTel ? hotelTel+'<br>' : ''}${hotelMail}</div>
+  <div style="margin-top:8px;font-weight:700;font-size:13px">REÇU – ${commande.numeroCommande || '#' + commande.id}</div>
 </div>
 <div class="section-title">Informations</div>
 <div class="info-grid">
@@ -299,34 +330,24 @@ tbody tr td{padding:5px 2px;vertical-align:top}
 <div class="divider"></div>
 <div class="section-title">Détail</div>
 <table>
-  <thead><tr>
-    <th style="text-align:left">Article</th>
-    <th style="text-align:center">Qté</th>
-    <th style="text-align:right">P.U.</th>
-    <th style="text-align:right">Total</th>
-  </tr></thead>
+  <thead><tr><th style="text-align:left">Article</th><th style="text-align:center">Qté</th><th style="text-align:right">P.U.</th><th style="text-align:right">Total</th></tr></thead>
   <tbody>${lignesHTML}</tbody>
 </table>
 <div class="totals">
+  ${remiseHTML}
   <div class="totals-row total-final"><span>TOTAL</span><span>${commande.montantTotal.toLocaleString('fr-FR')} FCFA</span></div>
   <div class="totals-row paye"><span>Montant payé</span><span>${montantPaye.toLocaleString('fr-FR')} FCFA</span></div>
   ${restant > 0
       ? `<div class="totals-row restant"><span>Reste à payer</span><span>${restant.toLocaleString('fr-FR')} FCFA</span></div>`
       : `<div class="totals-row paye"><span>✓ Entièrement payé</span><span></span></div>`}
 </div>
-<div class="footer">
-  <strong>Merci de votre commande !</strong>
-  <p>${hotelNom}</p>
-  <p>Imprimé le ${new Date().toLocaleString('fr-FR')}</p>
-</div>
+<div class="footer"><strong>Merci de votre commande !</strong><p>${hotelNom}</p><p>Imprimé le ${new Date().toLocaleString('fr-FR')}</p></div>
 <script>window.onload=function(){window.print();setTimeout(function(){window.close()},1000)}</script>
 </body></html>`;
 
     const w = window.open('', '_blank', 'width=500,height=700');
     if (w) { w.document.write(html); w.document.close(); }
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────────
 
   getStatutLabel(s: StatutCommandeRestaurant): string { return STATUT_COMMANDE_LABELS[s] || s; }
   getStatutSeverity(s: StatutCommandeRestaurant): Severity { return (STATUT_COMMANDE_COLORS[s] || 'info') as Severity; }

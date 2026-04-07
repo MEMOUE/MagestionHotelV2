@@ -1,6 +1,7 @@
 package com.mghbackend.controller;
 
 import com.mghbackend.dto.reponse.ApiResponse;
+import com.mghbackend.dto.request.AppliquerRemiseRequest;
 import com.mghbackend.dto.request.CreateReservationRequest;
 import com.mghbackend.dto.request.UpdateReservationRequest;
 import com.mghbackend.dto.ReservationDto;
@@ -235,6 +236,19 @@ public class ReservationController {
         try {
             ReservationDto reservation = reservationService.addPaiement(id, montant, modePaiement);
             return ResponseEntity.ok(ApiResponse.success("Paiement enregistré avec succès", reservation));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/remise")
+    @PreAuthorize("hasRole('HOTEL') or hasAuthority('PERMISSION_MODIFIER_RESERVATION')")
+    public ResponseEntity<ApiResponse<ReservationDto>> appliquerRemise(
+            @PathVariable Long id,
+            @RequestBody AppliquerRemiseRequest request) {
+        try {
+            ReservationDto reservation = reservationService.appliquerRemise(id, request);
+            return ResponseEntity.ok(ApiResponse.success("Remise appliquée avec succès", reservation));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

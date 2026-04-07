@@ -1,18 +1,11 @@
-// ===============================
-// MODELS POUR LE RESTAURANT
-// Compatible avec le backend Spring Boot
-// Les produits du menu proviennent directement du stock (Produit)
-// ===============================
-
 import { Produit, TypeProduit } from './produit.model';
 
-// ProduitMenu est maintenant un alias vers Produit (fusion économat/restaurant)
 export type ProduitMenu = Produit;
 
 export interface LigneCommande {
   id?: number;
-  produitId: number;          // Référence vers Produit (anciennement produitMenuId)
-  produitNom?: string;         // Nom du produit (anciennement produitMenuNom)
+  produitId: number;
+  produitNom?: string;
   quantite: number;
   prixUnitaire: number;
   sousTotal?: number;
@@ -23,21 +16,22 @@ export interface CommandeRestaurant {
   id?: number;
   numeroCommande?: string;
 
-  // Client externe (non-client de l'hôtel)
   nomClientExterne?: string;
   telephoneClientExterne?: string;
 
-  // OU Client de l'hôtel
   clientId?: number;
   clientNom?: string;
 
-  // OU Réservation
   reservationId?: number;
   reservationNumero?: string;
 
   numeroTable?: string;
   statut: StatutCommandeRestaurant;
   montantTotal: number;
+
+  /** Remise globale soustraite du montant brut */
+  remiseTotale?: number;
+
   montantPaye?: number;
   notes?: string;
   dateCommande?: string;
@@ -62,7 +56,6 @@ export enum StatutCommandeRestaurant {
   ANNULEE = 'ANNULEE'
 }
 
-// Labels pour les statuts
 export const STATUT_COMMANDE_LABELS: Record<StatutCommandeRestaurant, string> = {
   [StatutCommandeRestaurant.EN_ATTENTE]: 'En attente',
   [StatutCommandeRestaurant.EN_PREPARATION]: 'En préparation',
@@ -72,7 +65,6 @@ export const STATUT_COMMANDE_LABELS: Record<StatutCommandeRestaurant, string> = 
   [StatutCommandeRestaurant.ANNULEE]: 'Annulée'
 };
 
-// Couleurs pour les statuts
 export const STATUT_COMMANDE_COLORS: Record<StatutCommandeRestaurant, string> = {
   [StatutCommandeRestaurant.EN_ATTENTE]: 'warning',
   [StatutCommandeRestaurant.EN_PREPARATION]: 'info',
@@ -82,7 +74,6 @@ export const STATUT_COMMANDE_COLORS: Record<StatutCommandeRestaurant, string> = 
   [StatutCommandeRestaurant.ANNULEE]: 'danger'
 };
 
-// Catégories du menu alignées sur TypeProduit (backend)
 export const CATEGORIES_MENU = [
   { value: TypeProduit.ENTREE,  label: 'Entrées',   icon: 'pi-star' },
   { value: TypeProduit.PLAT,    label: 'Plats',     icon: 'pi-sun' },

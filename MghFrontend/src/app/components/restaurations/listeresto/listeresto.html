@@ -2,293 +2,141 @@
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
-  <!-- ══════════════════════════════════════════════════════════════════
-       CARTES STATISTIQUES — se recalculent après chaque filtre
-       ══════════════════════════════════════════════════════════════════ -->
+  <!-- Statistiques -->
   <div class="statistics-grid">
-
     <div class="stat-card">
-      <div class="stat-icon">
-        <i class="pi pi-shopping-cart"></i>
-      </div>
+      <div class="stat-icon"><i class="pi pi-shopping-cart"></i></div>
       <div class="stat-content">
         <div class="stat-value">{{ totalCommandes }}</div>
-        <div class="stat-label">
-          Total Commandes
-          <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span>
-        </div>
+        <div class="stat-label">Total Commandes <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span></div>
       </div>
     </div>
-
     <div class="stat-card">
-      <div class="stat-icon warning">
-        <i class="pi pi-clock"></i>
-      </div>
+      <div class="stat-icon warning"><i class="pi pi-clock"></i></div>
       <div class="stat-content">
         <div class="stat-value">{{ commandesEnAttente }}</div>
-        <div class="stat-label">
-          En Attente
-          <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span>
-        </div>
+        <div class="stat-label">En Attente <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span></div>
       </div>
     </div>
-
     <div class="stat-card">
-      <div class="stat-icon info">
-        <i class="pi pi-cog"></i>
-      </div>
+      <div class="stat-icon info"><i class="pi pi-cog"></i></div>
       <div class="stat-content">
         <div class="stat-value">{{ commandesEnCours }}</div>
-        <div class="stat-label">
-          En Préparation
-          <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span>
-        </div>
+        <div class="stat-label">En Préparation <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span></div>
       </div>
     </div>
-
     <div class="stat-card">
-      <div class="stat-icon success">
-        <i class="pi pi-money-bill"></i>
-      </div>
+      <div class="stat-icon success"><i class="pi pi-money-bill"></i></div>
       <div class="stat-content">
         <div class="stat-value">{{ chiffreAffaires.toLocaleString('fr-FR') }} FCFA</div>
-        <div class="stat-label">
-          Chiffre d'Affaires
-          <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span>
-        </div>
+        <div class="stat-label">Chiffre d'Affaires <span *ngIf="hasActiveFilters" class="stat-filter-hint">(filtrées)</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════
-       BARRE D'OUTILS
-       ══════════════════════════════════════════════════════════════════ -->
+  <!-- Toolbar -->
   <p-toolbar styleClass="mb-4">
     <ng-template pTemplate="left">
-      <p-button label="Nouvelle Commande" icon="pi pi-plus"
-                severity="success" styleClass="mr-2"
-                (onClick)="nouvelleCommande()">
-      </p-button>
-      <p-button label="Actualiser" icon="pi pi-refresh"
-                severity="secondary"
-                (onClick)="loadCommandes()">
-      </p-button>
+      <p-button label="Nouvelle Commande" icon="pi pi-plus" severity="success" styleClass="mr-2" (onClick)="nouvelleCommande()"></p-button>
+      <p-button label="Actualiser" icon="pi pi-refresh" severity="secondary" (onClick)="loadCommandes()"></p-button>
     </ng-template>
     <ng-template pTemplate="right">
-      <p-button
-        label="Réinitialiser les filtres"
-        icon="pi pi-filter-slash"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="clearFilters()"
-        [disabled]="!hasActiveFilters">
-      </p-button>
+      <p-button label="Réinitialiser les filtres" icon="pi pi-filter-slash" severity="secondary" [outlined]="true" (onClick)="clearFilters()" [disabled]="!hasActiveFilters"></p-button>
     </ng-template>
   </p-toolbar>
 
-  <!-- ══════════════════════════════════════════════════════════════════
-       BLOC FILTRES
-       ══════════════════════════════════════════════════════════════════ -->
+  <!-- Filtres -->
   <p-card styleClass="mb-4">
-
-    <!-- Première ligne : recherche + statut -->
     <div class="filters-grid">
-
       <div class="filter-field">
         <label for="search">Rechercher</label>
-        <input pInputText id="search" type="text"
-               [(ngModel)]="searchValue"
-               (input)="onSearchChange()"
-               placeholder="N° commande, client, table, serveur..."
-               class="w-full">
+        <input pInputText id="search" type="text" [(ngModel)]="searchValue" (input)="onSearchChange()" placeholder="N° commande, client, table, serveur..." class="w-full">
       </div>
-
       <div class="filter-field">
         <label for="statut">Statut</label>
-        <p-select id="statut"
-                  [(ngModel)]="selectedStatut"
-                  [options]="statutOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  (onChange)="onStatutChange()"
-                  placeholder="Tous les statuts"
-                  class="w-full">
-        </p-select>
+        <p-select id="statut" [(ngModel)]="selectedStatut" [options]="statutOptions" optionLabel="label" optionValue="value" (onChange)="onStatutChange()" placeholder="Tous les statuts" class="w-full"></p-select>
       </div>
     </div>
-
-    <!-- Deuxième ligne : filtres de date -->
     <div class="filters-grid mt-3">
-
       <div class="filter-field">
-        <label for="dateDebut">
-          <i class="pi pi-calendar mr-1"></i>Date de début
-        </label>
-        <p-datepicker
-          id="dateDebut"
-          [(ngModel)]="dateDebut"
-          (onSelect)="onDateChange()"
-          (onClearClick)="onDateChange()"
-          dateFormat="dd/mm/yy"
-          placeholder="Sélectionnez une date"
-          [showIcon]="true"
-          [showClear]="true"
-          class="w-full">
-        </p-datepicker>
+        <label for="dateDebut"><i class="pi pi-calendar mr-1"></i>Date de début</label>
+        <p-datepicker id="dateDebut" [(ngModel)]="dateDebut" (onSelect)="onDateChange()" (onClearClick)="onDateChange()" dateFormat="dd/mm/yy" placeholder="Sélectionnez une date" [showIcon]="true" [showClear]="true" class="w-full"></p-datepicker>
       </div>
-
       <div class="filter-field">
-        <label for="dateFin">
-          <i class="pi pi-calendar mr-1"></i>Date de fin
-        </label>
-        <p-datepicker
-          id="dateFin"
-          [(ngModel)]="dateFin"
-          (onSelect)="onDateChange()"
-          (onClearClick)="onDateChange()"
-          dateFormat="dd/mm/yy"
-          placeholder="Sélectionnez une date"
-          [showIcon]="true"
-          [showClear]="true"
-          [minDate]="dateDebut ?? undefined"
-          class="w-full">
-        </p-datepicker>
+        <label for="dateFin"><i class="pi pi-calendar mr-1"></i>Date de fin</label>
+        <p-datepicker id="dateFin" [(ngModel)]="dateFin" (onSelect)="onDateChange()" (onClearClick)="onDateChange()" dateFormat="dd/mm/yy" placeholder="Sélectionnez une date" [showIcon]="true" [showClear]="true" [minDate]="dateDebut ?? undefined" class="w-full"></p-datepicker>
       </div>
     </div>
-
-    <!-- Bandeau récapitulatif des filtres actifs -->
-    <div *ngIf="hasActiveFilters"
-         class="mt-3 p-2 border-round border-1 border-primary-200 bg-primary-50 flex align-items-center gap-2">
+    <div *ngIf="hasActiveFilters" class="mt-3 p-2 border-round border-1 border-primary-200 bg-primary-50 flex align-items-center gap-2">
       <i class="pi pi-filter text-primary"></i>
       <span class="text-primary text-sm">
-        Filtres actifs —
-        <strong>{{ commandesFiltrees.length }}</strong>
-        commande{{ commandesFiltrees.length !== 1 ? 's' : '' }} affichée{{ commandesFiltrees.length !== 1 ? 's' : '' }}
-        sur {{ commandes.length }}
-        <span *ngIf="dateDebut || dateFin">
-          · Période :
-          <strong>{{ dateDebut ? (dateDebut | date:'dd/MM/yyyy') : '…' }}</strong>
-          →
-          <strong>{{ dateFin ? (dateFin | date:'dd/MM/yyyy') : '…' }}</strong>
-        </span>
+        Filtres actifs — <strong>{{ commandesFiltrees.length }}</strong> commande{{ commandesFiltrees.length !== 1 ? 's' : '' }} affichée{{ commandesFiltrees.length !== 1 ? 's' : '' }} sur {{ commandes.length }}
       </span>
     </div>
   </p-card>
 
-  <!-- ══════════════════════════════════════════════════════════════════
-       TABLE DES COMMANDES
-       ══════════════════════════════════════════════════════════════════ -->
+  <!-- Table -->
   <p-card>
-    <p-table
-      [value]="commandesFiltrees"
-      [loading]="loading"
-      [paginator]="true"
-      [rows]="10"
-      [rowsPerPageOptions]="[10, 20, 50]"
-      [showCurrentPageReport]="true"
-      currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} commandes"
-      styleClass="p-datatable-striped">
+    <p-table [value]="commandesFiltrees" [loading]="loading" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50]" [showCurrentPageReport]="true" currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} commandes" styleClass="p-datatable-striped">
 
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="numeroCommande">
-            N° Commande <p-sortIcon field="numeroCommande"></p-sortIcon>
-          </th>
+          <th pSortableColumn="numeroCommande">N° Commande <p-sortIcon field="numeroCommande"></p-sortIcon></th>
           <th>Client</th>
-          <th pSortableColumn="numeroTable">
-            Table <p-sortIcon field="numeroTable"></p-sortIcon>
-          </th>
+          <th pSortableColumn="numeroTable">Table <p-sortIcon field="numeroTable"></p-sortIcon></th>
           <th>Serveur</th>
-          <th pSortableColumn="montantTotal">
-            Montant <p-sortIcon field="montantTotal"></p-sortIcon>
-          </th>
+          <th pSortableColumn="montantTotal">Montant <p-sortIcon field="montantTotal"></p-sortIcon></th>
           <th>Paiement</th>
-          <th pSortableColumn="statut">
-            Statut <p-sortIcon field="statut"></p-sortIcon>
-          </th>
-          <th pSortableColumn="dateCommande">
-            Date <p-sortIcon field="dateCommande"></p-sortIcon>
-          </th>
-          <th style="width: 220px">Actions</th>
+          <th pSortableColumn="statut">Statut <p-sortIcon field="statut"></p-sortIcon></th>
+          <th pSortableColumn="dateCommande">Date <p-sortIcon field="dateCommande"></p-sortIcon></th>
+          <th style="width: 260px">Actions</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-commande>
         <tr>
           <td><strong>{{ commande.numeroCommande }}</strong></td>
-
           <td>
             {{ getClientDisplay(commande) }}
-            <div *ngIf="commande.telephoneClientExterne" class="text-sm text-muted">
-              {{ commande.telephoneClientExterne }}
-            </div>
+            <div *ngIf="commande.telephoneClientExterne" class="text-sm text-muted">{{ commande.telephoneClientExterne }}</div>
           </td>
-
           <td>
             <span *ngIf="commande.numeroTable">Table {{ commande.numeroTable }}</span>
             <span *ngIf="!commande.numeroTable" class="text-muted">-</span>
           </td>
-
           <td>
             <span *ngIf="commande.serveurNom">{{ commande.serveurNom }}</span>
             <span *ngIf="!commande.serveurNom" class="text-muted">-</span>
           </td>
-
-          <td><strong>{{ commande.montantTotal.toLocaleString('fr-FR') }} FCFA</strong></td>
-
+          <td>
+            <strong>{{ commande.montantTotal.toLocaleString('fr-FR') }} FCFA</strong>
+            <div *ngIf="(commande.remiseTotale || 0) > 0" class="text-sm" style="color:#b8860b">
+              Remise : -{{ commande.remiseTotale.toLocaleString('fr-FR') }} FCFA
+            </div>
+          </td>
           <td>
             <div>{{ (commande.montantPaye || 0).toLocaleString('fr-FR') }} FCFA</div>
             <div class="text-sm" [class.text-danger]="getMontantRestant(commande) > 0">
               Reste : {{ getMontantRestant(commande).toLocaleString('fr-FR') }} FCFA
             </div>
           </td>
-
           <td>
-            <p-tag [value]="getStatutLabel(commande.statut)"
-                   [severity]="getStatutSeverity(commande.statut)">
-            </p-tag>
+            <p-tag [value]="getStatutLabel(commande.statut)" [severity]="getStatutSeverity(commande.statut)"></p-tag>
           </td>
-
           <td>
             <div>{{ commande.dateCommande | date:'dd/MM/yyyy' }}</div>
             <div class="text-sm text-muted">{{ commande.dateCommande | date:'HH:mm' }}</div>
           </td>
-
           <td>
             <div class="action-buttons">
+              <p-button icon="pi pi-eye" severity="info" [text]="true" [rounded]="true" pTooltip="Voir les détails" (onClick)="viewCommande(commande)"></p-button>
+              <p-button icon="pi pi-print" severity="secondary" [text]="true" [rounded]="true" pTooltip="Imprimer le reçu" (onClick)="imprimerRecu(commande)"></p-button>
+              <p-button icon="pi pi-check" severity="success" [text]="true" [rounded]="true" pTooltip="Marquer comme servie" *ngIf="canMarquerServie(commande)" (onClick)="marquerCommeServie(commande)"></p-button>
+              <p-button icon="pi pi-money-bill" severity="help" [text]="true" [rounded]="true" pTooltip="Ajouter paiement" *ngIf="canAjouterPaiement(commande)" (onClick)="ajouterPaiement(commande)"></p-button>
+              <p-button icon="pi pi-check-circle" severity="success" [text]="true" [rounded]="true" pTooltip="Marquer comme payée" *ngIf="canMarquerPayee(commande)" (onClick)="marquerCommePayee(commande)"></p-button>
 
-              <p-button icon="pi pi-eye"
-                        severity="info" [text]="true" [rounded]="true"
-                        pTooltip="Voir les détails"
-                        (onClick)="viewCommande(commande)">
-              </p-button>
-
-              <p-button icon="pi pi-print"
-                        severity="secondary" [text]="true" [rounded]="true"
-                        pTooltip="Imprimer le reçu"
-                        (onClick)="imprimerRecu(commande)">
-              </p-button>
-
-              <p-button icon="pi pi-check"
-                        severity="success" [text]="true" [rounded]="true"
-                        pTooltip="Marquer comme servie"
-                        *ngIf="canMarquerServie(commande)"
-                        (onClick)="marquerCommeServie(commande)">
-              </p-button>
-
-              <p-button icon="pi pi-money-bill"
-                        severity="help" [text]="true" [rounded]="true"
-                        pTooltip="Ajouter paiement"
-                        *ngIf="canAjouterPaiement(commande)"
-                        (onClick)="ajouterPaiement(commande)">
-              </p-button>
-
-              <p-button icon="pi pi-check-circle"
-                        severity="success" [text]="true" [rounded]="true"
-                        pTooltip="Marquer comme payée"
-                        *ngIf="canMarquerPayee(commande)"
-                        (onClick)="marquerCommePayee(commande)">
-              </p-button>
+              <!-- ✅ Bouton Remise -->
+              <p-button icon="pi pi-percentage" severity="warn" [text]="true" [rounded]="true" pTooltip="Appliquer une remise" *ngIf="canApplyRemise(commande)" (onClick)="openRemiseDialog(commande)"></p-button>
             </div>
           </td>
         </tr>
@@ -300,17 +148,53 @@
             <div class="empty-message">
               <i class="pi pi-inbox" style="font-size:3rem"></i>
               <p>{{ hasActiveFilters ? 'Aucune commande ne correspond aux filtres sélectionnés' : 'Aucune commande trouvée' }}</p>
-              <p-button *ngIf="hasActiveFilters"
-                        label="Réinitialiser les filtres"
-                        icon="pi pi-filter-slash"
-                        severity="secondary" [outlined]="true"
-                        styleClass="mt-3"
-                        (onClick)="clearFilters()">
-              </p-button>
+              <p-button *ngIf="hasActiveFilters" label="Réinitialiser les filtres" icon="pi pi-filter-slash" severity="secondary" [outlined]="true" styleClass="mt-3" (onClick)="clearFilters()"></p-button>
             </div>
           </td>
         </tr>
       </ng-template>
     </p-table>
   </p-card>
+
+  <!-- ✅ Dialog Remise Restaurant -->
+  <p-dialog
+    header="Appliquer une remise"
+    [(visible)]="showRemiseDialog"
+    [modal]="true"
+    [style]="{width: '450px'}"
+    [draggable]="false"
+    [resizable]="false">
+
+    <div class="grid">
+      <div class="col-12">
+        <p class="mb-3">
+          Commande <strong>{{ remiseCommandeNumero }}</strong>
+          — Montant brut : <strong>{{ remiseMontantBrut.toLocaleString('fr-FR') }} FCFA</strong>
+        </p>
+      </div>
+      <div class="col-12">
+        <label for="remiseMontant">Montant de la remise (FCFA) <span class="text-red-500">*</span></label>
+        <p-inputNumber
+          id="remiseMontant"
+          [(ngModel)]="remiseMontant"
+          mode="decimal"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="0"
+          suffix=" FCFA"
+          placeholder="Ex: 5000"
+          [min]="0"
+          [max]="remiseMontantBrut"
+          class="w-full mt-2">
+        </p-inputNumber>
+        <small class="text-500 block mt-1">
+          Nouveau total après remise : <strong>{{ (remiseMontantBrut - remiseMontant).toLocaleString('fr-FR') }} FCFA</strong>
+        </small>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Annuler" icon="pi pi-times" (onClick)="showRemiseDialog = false" severity="secondary" [text]="true"></p-button>
+      <p-button label="Appliquer la remise" icon="pi pi-check" (onClick)="saveRemise()" severity="success"></p-button>
+    </ng-template>
+  </p-dialog>
 </div>

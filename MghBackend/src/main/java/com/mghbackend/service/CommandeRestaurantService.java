@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,17 +22,17 @@ import java.util.stream.Collectors;
 public class CommandeRestaurantService {
 
     private final CommandeRestaurantRepository commandeRepository;
-    private final ProduitRepository produitRepository;         // ← Produit (stock)
+    private final ProduitRepository produitRepository;
     private final ClientRepository clientRepository;
     private final ReservationRepository reservationRepository;
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final LigneCommandeRepository ligneCommandeRepository;
     private final ProduitService produitService;
-    private final TransactionHelper transactionHelper;// ← pour décrémenter le stock
+    private final TransactionHelper transactionHelper;
 
     // ─────────────────────────────────────────────────────────────
-    // Création d'une commande + décrémentation automatique du stock
+    // Création
     // ─────────────────────────────────────────────────────────────
 
     public CommandeRestaurantDto createCommande(Long hotelId,
@@ -47,8 +46,8 @@ public class CommandeRestaurantService {
         commande.setNumeroCommande(generateNumeroCommande());
         commande.setNumeroTable(dto.getNumeroTable());
         commande.setNotes(dto.getNotes());
+        commande.setRemiseTotale(BigDecimal.ZERO);
 
-        // Client externe OU client de l'hôtel OU réservation
         if (dto.getNomClientExterne() != null && !dto.getNomClientExterne().isBlank()) {
             commande.setNomClientExterne(dto.getNomClientExterne());
             commande.setTelephoneClientExterne(dto.getTelephoneClientExterne());
@@ -66,7 +65,6 @@ public class CommandeRestaurantService {
             userRepository.findById(userId).ifPresent(commande::setServeur);
         }
 
-        // ── Lignes + calcul total + décrémentation stock ──────────
         BigDecimal montantTotal = BigDecimal.ZERO;
 
         for (LigneCommandeDto ligneDto : dto.getLignes()) {
@@ -81,7 +79,6 @@ public class CommandeRestaurantService {
 
             BigDecimal qte = BigDecimal.valueOf(ligneDto.getQuantite());
 
-            // Vérification stock avant tout enregistrement
             if (produit.getQuantiteStock().compareTo(qte) < 0) {
                 throw new RuntimeException(
                         "Stock insuffisant pour '" + produit.getNom() +
@@ -102,18 +99,12 @@ public class CommandeRestaurantService {
 
             commande.getLignes().add(ligne);
 
-            // ✅ Décrémentation automatique du stock
             produitService.ajusterStock(
-                    produit.getId(),
-                    qte,
+                    produit.getId(), qte,
                     com.mghbackend.enums.TypeMouvement.SORTIE,
                     "Commande restaurant " + commande.getNumeroCommande(),
                     userId
             );
-
-            log.info("📦 Stock décrémenté : produit={}, qte={}, restant={}",
-                    produit.getNom(), qte,
-                    produit.getQuantiteStock().subtract(qte));
         }
 
         commande.setMontantTotal(montantTotal);
@@ -121,13 +112,8 @@ public class CommandeRestaurantService {
 
         CommandeRestaurant saved = commandeRepository.save(commande);
 
-        // ✅ Consolidation : ajouter le montant au total de la réservation liée
         if (commande.getReservation() != null) {
             majReservationMontant(commande.getReservation(), montantTotal);
-            log.info("🔗 Commande {} rattachée à réservation {} — +{} FCFA ajoutés au total",
-                    saved.getNumeroCommande(),
-                    commande.getReservation().getNumeroReservation(),
-                    montantTotal);
         }
 
         return convertToDto(saved);
@@ -146,8 +132,14 @@ public class CommandeRestaurantService {
                 .collect(Collectors.toList());
     }
 
+    public CommandeRestaurantDto getCommandeById(Long id) {
+        CommandeRestaurant commandeRestaurant = commandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Commande introuvable avec id: " + id));
+        return convertToDto(commandeRestaurant);
+    }
+
     // ─────────────────────────────────────────────────────────────
-    // Mises à jour
+    // Mises à jour statut
     // ─────────────────────────────────────────────────────────────
 
     public CommandeRestaurantDto updateStatut(Long commandeId,
@@ -160,7 +152,6 @@ public class CommandeRestaurantService {
             commande.setDateService(java.time.LocalDateTime.now());
         }
 
-        // Si la commande est annulée → remettre le stock
         if (statut == StatutCommandeRestaurant.ANNULEE) {
             for (LigneCommande ligne : commande.getLignes()) {
                 produitService.ajusterStock(
@@ -170,18 +161,11 @@ public class CommandeRestaurantService {
                         "Annulation commande " + commande.getNumeroCommande(),
                         null
                 );
-                log.info("♻️  Stock restitué suite annulation : produit={}",
-                        ligne.getProduit().getNom());
             }
 
-            // ✅ Retirer le montant de la réservation liée
             if (commande.getReservation() != null) {
                 majReservationMontant(commande.getReservation(),
                         commande.getMontantTotal().negate());
-                log.info("🔗 Annulation commande {} — -{} FCFA retirés de réservation {}",
-                        commande.getNumeroCommande(),
-                        commande.getMontantTotal(),
-                        commande.getReservation().getNumeroReservation());
             }
         }
 
@@ -221,7 +205,61 @@ public class CommandeRestaurantService {
                 montant
         );
         return convertToDto(saved);
+    }
 
+    // ─────────────────────────────────────────────────────────────
+    // ✅ NOUVEAU : Appliquer une remise totale
+    // ─────────────────────────────────────────────────────────────
+
+    public CommandeRestaurantDto appliquerRemise(Long commandeId, BigDecimal remise) {
+        CommandeRestaurant commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
+
+        if (commande.getStatut() == StatutCommandeRestaurant.ANNULEE) {
+            throw new RuntimeException("Impossible d'appliquer une remise sur une commande annulée");
+        }
+        if (remise.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("La remise ne peut pas être négative");
+        }
+
+        // Calculer le montant brut (somme des lignes)
+        BigDecimal montantBrut = commande.getLignes().stream()
+                .map(LigneCommande::getSousTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (remise.compareTo(montantBrut) > 0) {
+            throw new RuntimeException("La remise (" + remise +
+                    ") ne peut pas dépasser le montant brut (" + montantBrut + ")");
+        }
+
+        BigDecimal ancienTotal = commande.getMontantTotal();
+        BigDecimal nouveauTotal = montantBrut.subtract(remise);
+
+        commande.setRemiseTotale(remise);
+        commande.setMontantTotal(nouveauTotal);
+
+        // Recalcul du paiement
+        BigDecimal montantPaye = commande.getMontantPaye() != null
+                ? commande.getMontantPaye() : BigDecimal.ZERO;
+        if (montantPaye.compareTo(nouveauTotal) >= 0 &&
+                commande.getStatut() != StatutCommandeRestaurant.PAYEE) {
+            // Déjà suffisamment payé après remise
+        }
+
+        // Si lié à une réservation, ajuster le montant de la réservation
+        if (commande.getReservation() != null) {
+            BigDecimal difference = nouveauTotal.subtract(ancienTotal);
+            if (difference.compareTo(BigDecimal.ZERO) != 0) {
+                majReservationMontant(commande.getReservation(), difference);
+            }
+        }
+
+        CommandeRestaurant saved = commandeRepository.save(commande);
+
+        log.info("💸 Remise restaurant appliquée : commande={}, remise={}, nouveau total={}",
+                saved.getNumeroCommande(), remise, nouveauTotal);
+
+        return convertToDto(saved);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -234,6 +272,45 @@ public class CommandeRestaurantService {
             numero = "CMD" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         } while (commandeRepository.findByNumeroCommande(numero).isPresent());
         return numero;
+    }
+
+    private void majReservationMontant(Reservation reservation, BigDecimal montant) {
+        BigDecimal nouveauTotal = reservation.getMontantTotal().add(montant);
+        if (nouveauTotal.compareTo(BigDecimal.ZERO) < 0) {
+            nouveauTotal = BigDecimal.ZERO;
+        }
+
+        reservation.setMontantTotal(nouveauTotal);
+
+        BigDecimal nouveauRestant = nouveauTotal.subtract(
+                reservation.getMontantPaye() != null ? reservation.getMontantPaye() : BigDecimal.ZERO);
+        if (nouveauRestant.compareTo(BigDecimal.ZERO) < 0) {
+            nouveauRestant = BigDecimal.ZERO;
+        }
+        reservation.setMontantRestant(nouveauRestant);
+
+        BigDecimal montantPaye = reservation.getMontantPaye() != null
+                ? reservation.getMontantPaye() : BigDecimal.ZERO;
+
+        if (nouveauRestant.compareTo(BigDecimal.ZERO) <= 0) {
+            reservation.setStatutPaiement(com.mghbackend.enums.StatutPaiement.PAYE);
+        } else if (montantPaye.compareTo(BigDecimal.ZERO) > 0) {
+            reservation.setStatutPaiement(com.mghbackend.enums.StatutPaiement.ACOMPTE);
+        } else {
+            reservation.setStatutPaiement(com.mghbackend.enums.StatutPaiement.NON_PAYE);
+        }
+
+        reservationRepository.save(reservation);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommandeRestaurantDto> getCommandesByReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        return commandeRepository.findByReservation(reservation).stream()
+                .filter(c -> c.getStatut() != StatutCommandeRestaurant.ANNULEE)
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     private CommandeRestaurantDto convertToDto(CommandeRestaurant commande) {
@@ -256,6 +333,7 @@ public class CommandeRestaurantService {
         dto.setNumeroTable(commande.getNumeroTable());
         dto.setStatut(commande.getStatut());
         dto.setMontantTotal(commande.getMontantTotal());
+        dto.setRemiseTotale(commande.getRemiseTotale());
         dto.setMontantPaye(commande.getMontantPaye());
         dto.setNotes(commande.getNotes());
         dto.setDateCommande(commande.getDateCommande());
@@ -269,7 +347,6 @@ public class CommandeRestaurantService {
 
         dto.setHotelId(commande.getHotel().getId());
 
-        // Lignes
         List<LigneCommandeDto> lignesDto = commande.getLignes().stream()
                 .map(ligne -> {
                     LigneCommandeDto ligneDto = new LigneCommandeDto();
@@ -288,64 +365,5 @@ public class CommandeRestaurantService {
         dto.setCreatedAt(commande.getCreatedAt());
         dto.setUpdatedAt(commande.getUpdatedAt());
         return dto;
-    }
-
-    public CommandeRestaurantDto getCommandeById(Long id) {
-        CommandeRestaurant commandeRestaurant = commandeRepository.findById(id)
-                .orElseThrow(()->new RuntimeException("Commande introuvable avec id: " + id));
-        return convertToDto(commandeRestaurant);
-    }
-
-    /**
-     * Met à jour le montantTotal et montantRestant de la réservation
-     * lorsqu'une commande restaurant y est rattachée (ou annulée).
-     *
-     * @param reservation la réservation liée
-     * @param montant     montant positif → ajout (nouvelle commande),
-     *                    montant négatif → retrait (annulation commande)
-     */
-    private void majReservationMontant(Reservation reservation, BigDecimal montant) {
-        BigDecimal nouveauTotal = reservation.getMontantTotal().add(montant);
-        if (nouveauTotal.compareTo(BigDecimal.ZERO) < 0) {
-            nouveauTotal = BigDecimal.ZERO;
-        }
-
-        reservation.setMontantTotal(nouveauTotal);
-
-        BigDecimal nouveauRestant = nouveauTotal.subtract(
-                reservation.getMontantPaye() != null ? reservation.getMontantPaye() : BigDecimal.ZERO);
-        if (nouveauRestant.compareTo(BigDecimal.ZERO) < 0) {
-            nouveauRestant = BigDecimal.ZERO;
-        }
-        reservation.setMontantRestant(nouveauRestant);
-
-        // Recalcul du statut de paiement
-        BigDecimal montantPaye = reservation.getMontantPaye() != null
-                ? reservation.getMontantPaye() : BigDecimal.ZERO;
-
-        if (nouveauRestant.compareTo(BigDecimal.ZERO) <= 0) {
-            reservation.setStatutPaiement(com.mghbackend.enums.StatutPaiement.PAYE);
-        } else if (montantPaye.compareTo(BigDecimal.ZERO) > 0) {
-            reservation.setStatutPaiement(com.mghbackend.enums.StatutPaiement.ACOMPTE);
-        } else {
-            reservation.setStatutPaiement(com.mghbackend.enums.StatutPaiement.NON_PAYE);
-        }
-
-        reservationRepository.save(reservation);
-
-        log.info("💰 Réservation {} mise à jour : total={}, restant={}, statut={}",
-                reservation.getNumeroReservation(),
-                nouveauTotal, nouveauRestant,
-                reservation.getStatutPaiement());
-    }
-
-    @Transactional(readOnly = true)
-    public List<CommandeRestaurantDto> getCommandesByReservation(Long reservationId) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
-        return commandeRepository.findByReservation(reservation).stream()
-                .filter(c -> c.getStatut() != StatutCommandeRestaurant.ANNULEE)
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
     }
 }

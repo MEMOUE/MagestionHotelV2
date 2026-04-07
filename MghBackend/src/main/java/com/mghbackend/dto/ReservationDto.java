@@ -49,6 +49,11 @@ public class ReservationDto {
     private Integer nombreEnfants;
 
     private BigDecimal prixParNuit;
+
+    // ── Remises ────────────────────────────────────────────────
+    private BigDecimal remiseJournaliere;
+    private BigDecimal remiseTotale;
+
     private BigDecimal montantTotal;
     private BigDecimal montantPaye;
     private BigDecimal montantRestant;

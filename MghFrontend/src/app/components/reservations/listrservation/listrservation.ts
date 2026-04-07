@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-// PrimeNG Imports
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,10 +13,11 @@ import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 
 import { MessageService, ConfirmationService } from 'primeng/api';
 
-// Models & Services
 import {
   Reservation,
   StatutReservation,
@@ -27,28 +27,18 @@ import {
 } from '../../../models/reservation.model';
 import { ReservationService } from '../../../services/reservation.service';
 
-interface StatutOption {
-  label: string;
-  value: StatutReservation | '';
-};
+interface StatutOption { label: string; value: StatutReservation | ''; }
 type Severity = "success" | "info" | "warn" | "danger" | "secondary" | "contrast" | null | undefined;
 
 @Component({
   selector: 'app-listrservation',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    InputTextModule,
-    SelectModule,
-    DatePickerModule,
-    TagModule,
-    CardModule,
-    ToolbarModule,
-    ToastModule,
-    ConfirmDialogModule
+    CommonModule, FormsModule,
+    TableModule, ButtonModule, InputTextModule,
+    SelectModule, DatePickerModule, TagModule,
+    CardModule, ToolbarModule, ToastModule,
+    ConfirmDialogModule, DialogModule, InputNumberModule
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './listrservation.html',
@@ -59,13 +49,11 @@ export class Listrservation implements OnInit {
   filteredReservations: Reservation[] = [];
   loading = false;
 
-  // Filtres
   searchText = '';
   selectedStatut: StatutReservation | '' = '';
   dateDebutFilter: Date | null = null;
   dateFinFilter: Date | null = null;
 
-  // Options pour les dropdowns
   statutOptions: StatutOption[] = [
     { label: 'Tous les statuts', value: '' },
     { label: 'En attente', value: StatutReservation.EN_ATTENTE },
@@ -76,15 +64,18 @@ export class Listrservation implements OnInit {
     { label: 'No-show', value: StatutReservation.NO_SHOW }
   ];
 
-  // Statistiques
   stats = {
-    total: 0,
-    enAttente: 0,
-    confirmees: 0,
-    enCours: 0,
-    aujourdhuiArrivees: 0,
-    aujourdhuiDeparts: 0
+    total: 0, enAttente: 0, confirmees: 0, enCours: 0,
+    aujourdhuiArrivees: 0, aujourdhuiDeparts: 0
   };
+
+  // ✅ Remise dialog
+  showRemiseDialog = false;
+  remiseReservationId: number | null = null;
+  remiseReservationNumero = '';
+  remiseJournaliere = 0;
+  remiseTotale = 0;
+  remisePrixParNuit = 0;
 
   constructor(
     private reservationService: ReservationService,
@@ -105,46 +96,26 @@ export class Listrservation implements OnInit {
           this.reservations = response.data;
           this.filteredReservations = [...this.reservations];
           this.calculateStats();
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Succès',
-            detail: 'Réservations chargées avec succès'
-          });
         }
         this.loading = false;
       },
-      error: (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erreur',
-          detail: 'Erreur lors du chargement des réservations'
-        });
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors du chargement' });
         this.loading = false;
-        console.error('Erreur:', error);
       }
     });
   }
 
   applyFilters(): void {
-    this.filteredReservations = this.reservations.filter(reservation => {
-      // Filtre par texte de recherche
+    this.filteredReservations = this.reservations.filter(r => {
       const matchesSearch = !this.searchText ||
-        reservation.numeroReservation?.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        reservation.clientNom?.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        reservation.clientPrenom?.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        reservation.chambreNumero?.toLowerCase().includes(this.searchText.toLowerCase());
-
-      // Filtre par statut
-      const matchesStatut = !this.selectedStatut || reservation.statut === this.selectedStatut;
-
-      // Filtre par date de début
-      const matchesDateDebut = !this.dateDebutFilter ||
-        new Date(reservation.dateArrivee) >= this.dateDebutFilter;
-
-      // Filtre par date de fin
-      const matchesDateFin = !this.dateFinFilter ||
-        new Date(reservation.dateDepart) <= this.dateFinFilter;
-
+        r.numeroReservation?.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        r.clientNom?.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        r.clientPrenom?.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        r.chambreNumero?.toLowerCase().includes(this.searchText.toLowerCase());
+      const matchesStatut = !this.selectedStatut || r.statut === this.selectedStatut;
+      const matchesDateDebut = !this.dateDebutFilter || new Date(r.dateArrivee) >= this.dateDebutFilter;
+      const matchesDateFin = !this.dateFinFilter || new Date(r.dateDepart) <= this.dateFinFilter;
       return matchesSearch && matchesStatut && matchesDateDebut && matchesDateFin;
     });
   }
@@ -162,17 +133,9 @@ export class Listrservation implements OnInit {
     this.stats.enAttente = this.reservations.filter(r => r.statut === StatutReservation.EN_ATTENTE).length;
     this.stats.confirmees = this.reservations.filter(r => r.statut === StatutReservation.CONFIRMEE).length;
     this.stats.enCours = this.reservations.filter(r => r.statut === StatutReservation.EN_COURS).length;
-
     const today = new Date().toISOString().split('T')[0];
-    this.stats.aujourdhuiArrivees = this.reservations.filter(r => {
-      const arrivalDate = new Date(r.dateArrivee).toISOString().split('T')[0];
-      return arrivalDate === today;
-    }).length;
-
-    this.stats.aujourdhuiDeparts = this.reservations.filter(r => {
-      const departureDate = new Date(r.dateDepart).toISOString().split('T')[0];
-      return departureDate === today;
-    }).length;
+    this.stats.aujourdhuiArrivees = this.reservations.filter(r => new Date(r.dateArrivee).toISOString().split('T')[0] === today).length;
+    this.stats.aujourdhuiDeparts = this.reservations.filter(r => new Date(r.dateDepart).toISOString().split('T')[0] === today).length;
   }
 
   viewReservation(reservation: Reservation): void {
@@ -180,163 +143,112 @@ export class Listrservation implements OnInit {
   }
 
   doCheckin(reservation: Reservation): void {
-    if (reservation.statut !== StatutReservation.CONFIRMEE) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Attention',
-        detail: 'Seules les réservations confirmées peuvent faire l\'objet d\'un check-in'
-      });
-      return;
-    }
-
+    if (reservation.statut !== StatutReservation.CONFIRMEE) return;
     this.confirmationService.confirm({
       message: `Confirmer le check-in pour ${reservation.clientPrenom} ${reservation.clientNom} ?`,
-      header: 'Confirmation Check-in',
-      icon: 'pi pi-check-circle',
+      header: 'Confirmation Check-in', icon: 'pi pi-check-circle',
       accept: () => {
         this.reservationService.doCheckin(reservation.id!).subscribe({
-          next: (response) => {
-            if (response.success) {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Succès',
-                detail: 'Check-in effectué avec succès'
-              });
-              this.loadReservations();
-            }
-          },
-          error: (error) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erreur',
-              detail: error.message || 'Erreur lors du check-in'
-            });
-          }
+          next: (r) => { if (r.success) { this.messageService.add({ severity: 'success', summary: 'Succès', detail: 'Check-in effectué' }); this.loadReservations(); }},
+          error: (e) => this.messageService.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Erreur check-in' })
         });
       }
     });
   }
 
   doCheckout(reservation: Reservation): void {
-    if (reservation.statut !== StatutReservation.EN_COURS) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Attention',
-        detail: 'Seules les réservations en cours peuvent faire l\'objet d\'un check-out'
-      });
-      return;
-    }
-
+    if (reservation.statut !== StatutReservation.EN_COURS) return;
     this.confirmationService.confirm({
       message: `Confirmer le check-out pour ${reservation.clientPrenom} ${reservation.clientNom} ?`,
-      header: 'Confirmation Check-out',
-      icon: 'pi pi-sign-out',
+      header: 'Confirmation Check-out', icon: 'pi pi-sign-out',
       accept: () => {
         this.reservationService.doCheckout(reservation.id!).subscribe({
-          next: (response) => {
-            if (response.success) {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Succès',
-                detail: 'Check-out effectué avec succès'
-              });
-              this.loadReservations();
-            }
-          },
-          error: (error) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erreur',
-              detail: error.message || 'Erreur lors du check-out'
-            });
-          }
+          next: (r) => { if (r.success) { this.messageService.add({ severity: 'success', summary: 'Succès', detail: 'Check-out effectué' }); this.loadReservations(); }},
+          error: (e) => this.messageService.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Erreur check-out' })
         });
       }
     });
   }
 
   cancelReservation(reservation: Reservation): void {
-    if (reservation.statut === StatutReservation.TERMINEE) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Attention',
-        detail: 'Impossible d\'annuler une réservation terminée'
-      });
-      return;
-    }
-
-    if (reservation.statut === StatutReservation.EN_COURS) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Attention',
-        detail: 'Effectuez d\'abord le check-out avant d\'annuler'
-      });
-      return;
-    }
-
+    if (reservation.statut === StatutReservation.TERMINEE || reservation.statut === StatutReservation.EN_COURS) return;
     this.confirmationService.confirm({
-      message: `Êtes-vous sûr de vouloir annuler la réservation ${reservation.numeroReservation} ?`,
-      header: 'Confirmation d\'annulation',
-      icon: 'pi pi-exclamation-triangle',
-      acceptButtonStyleClass: 'p-button-danger',
+      message: `Annuler la réservation ${reservation.numeroReservation} ?`,
+      header: "Confirmation d'annulation", icon: 'pi pi-exclamation-triangle', acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.reservationService.cancelReservation(reservation.id!).subscribe({
-          next: (response) => {
-            if (response.success) {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Succès',
-                detail: 'Réservation annulée avec succès'
-              });
-              this.loadReservations();
-            }
-          },
-          error: (error) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erreur',
-              detail: error.message || 'Erreur lors de l\'annulation'
-            });
-          }
+          next: (r) => { if (r.success) { this.messageService.add({ severity: 'success', summary: 'Succès', detail: 'Réservation annulée' }); this.loadReservations(); }},
+          error: (e) => this.messageService.add({ severity: 'error', summary: 'Erreur', detail: e.message || "Erreur annulation" })
         });
       }
     });
   }
 
-  createReservation(): void {
-    this.router.navigate(['/reservation/create']);
+  createReservation(): void { this.router.navigate(['/reservation/create']); }
+
+  // ✅ Ouvrir le dialog remise
+  openRemiseDialog(reservation: Reservation): void {
+    this.remiseReservationId = reservation.id!;
+    this.remiseReservationNumero = reservation.numeroReservation || '';
+    this.remiseJournaliere = reservation.remiseJournaliere || 0;
+    this.remiseTotale = reservation.remiseTotale || 0;
+    this.remisePrixParNuit = reservation.prixParNuit || 0;
+    this.showRemiseDialog = true;
+  }
+
+  // ✅ Sauvegarder la remise
+  saveRemise(): void {
+    if (!this.remiseReservationId) return;
+    if (this.remiseJournaliere < 0 || this.remiseTotale < 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Attention', detail: 'Les remises ne peuvent pas être négatives' });
+      return;
+    }
+    if (this.remiseJournaliere > this.remisePrixParNuit) {
+      this.messageService.add({ severity: 'warn', summary: 'Attention', detail: 'La remise journalière ne peut pas dépasser le prix par nuit' });
+      return;
+    }
+
+    this.reservationService.appliquerRemise(this.remiseReservationId, {
+      remiseJournaliere: this.remiseJournaliere,
+      remiseTotale: this.remiseTotale
+    }).subscribe({
+      next: (r) => {
+        if (r.success) {
+          this.messageService.add({ severity: 'success', summary: 'Succès', detail: 'Remise appliquée avec succès' });
+          this.showRemiseDialog = false;
+          this.loadReservations();
+        }
+      },
+      error: (e) => this.messageService.add({
+        severity: 'error', summary: 'Erreur',
+        detail: e.error?.message || "Impossible d'appliquer la remise"
+      })
+    });
+  }
+
+  canApplyRemise(reservation: Reservation): boolean {
+    return reservation.statut !== StatutReservation.ANNULEE &&
+      reservation.statut !== StatutReservation.TERMINEE;
   }
 
   getStatutSeverity(statut: StatutReservation | undefined): Severity {
     switch (statut) {
-      case StatutReservation.CONFIRMEE:
-        return 'success';
-      case StatutReservation.EN_COURS:
-        return 'info';
-      case StatutReservation.EN_ATTENTE:
-        return 'warn'; // ✅ CHANGÉ: 'warn' au lieu de 'warning'
-      case StatutReservation.ANNULEE:
-      case StatutReservation.NO_SHOW:
-        return 'danger';
-      case StatutReservation.TERMINEE:
-        return 'secondary';
-      default:
-        return 'secondary';
+      case StatutReservation.CONFIRMEE: return 'success';
+      case StatutReservation.EN_COURS: return 'info';
+      case StatutReservation.EN_ATTENTE: return 'warn';
+      case StatutReservation.ANNULEE: case StatutReservation.NO_SHOW: return 'danger';
+      case StatutReservation.TERMINEE: return 'secondary';
+      default: return 'secondary';
     }
   }
 
   getStatutPaiementSeverity(statut: StatutPaiement | undefined): Severity {
     switch (statut) {
-      case StatutPaiement.PAYE:
-        return 'success';
-      case StatutPaiement.ACOMPTE:
-        return 'warn'; // ✅ CHANGÉ: 'warn' au lieu de 'warning'
-      case StatutPaiement.NON_PAYE:
-        return 'danger';
-      case StatutPaiement.REMBOURSE:
-        return 'info';
-      default:
-        return 'secondary';
+      case StatutPaiement.PAYE: return 'success';
+      case StatutPaiement.ACOMPTE: return 'warn';
+      case StatutPaiement.NON_PAYE: return 'danger';
+      case StatutPaiement.REMBOURSE: return 'info';
+      default: return 'secondary';
     }
   }
 
@@ -355,10 +267,6 @@ export class Listrservation implements OnInit {
 
   formatCurrency(amount: number | undefined): string {
     if (!amount) return '0 FCFA';
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount) + ' FCFA';
+    return new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) + ' FCFA';
   }
 }

@@ -50,6 +50,15 @@ public class Reservation extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prixParNuit;
 
+    // ── Remises ────────────────────────────────────────────────
+    /** Remise par nuit (ex: chambre à 10000 → remiseJournaliere=3000 → prix effectif 7000/nuit) */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal remiseJournaliere = BigDecimal.ZERO;
+
+    /** Remise globale soustraite du montant total */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal remiseTotale = BigDecimal.ZERO;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal montantTotal;
 
@@ -81,16 +90,16 @@ public class Reservation extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    private User createdBy; // Employé qui a créé la réservation
+    private User createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "checkin_by")
-    private User checkinBy; // Employé qui a fait le check-in
+    private User checkinBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "checkout_by")
-    private User checkoutBy; // Employé qui a fait le check-out
+    private User checkoutBy;
 
     @Column(length = 100)
-    private String referenceExterne; // Pour les réservations via plateformes tierces
+    private String referenceExterne;
 }

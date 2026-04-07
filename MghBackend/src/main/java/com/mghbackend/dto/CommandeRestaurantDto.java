@@ -18,15 +18,12 @@ public class CommandeRestaurantDto {
     private Long id;
     private String numeroCommande;
 
-    // Client externe (non-client de l'hôtel)
     private String nomClientExterne;
     private String telephoneClientExterne;
 
-    // OU Client de l'hôtel
     private Long clientId;
     private String clientNom;
 
-    // OU Réservation
     private Long reservationId;
     private String reservationNumero;
 
@@ -36,6 +33,9 @@ public class CommandeRestaurantDto {
     @NotNull(message = "Le montant total est obligatoire")
     @DecimalMin(value = "0.0", message = "Le montant doit être positif")
     private BigDecimal montantTotal;
+
+    /** Remise globale soustraite du montant brut */
+    private BigDecimal remiseTotale;
 
     private BigDecimal montantPaye;
     private String notes;
