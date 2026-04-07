@@ -33,6 +33,24 @@ spring:
       max-request-size: 5MB
       enabled: true
 
+  # ── Configuration Email (SMTP) ─────────────────────────────────
+  mail:
+    host: mail.magestionhotel.com
+    port: 465
+    username: contact@magestionhotel.com
+    password: Loss@mgh2026
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
+        transport:
+          protocol: smtps
+    default-encoding: UTF-8
+
 server:
   port: 8080
   servlet:
@@ -46,6 +64,11 @@ server:
 jwt:
   secret: mySecretKeyForMghBackendApplicationVerySecureAndLongEnoughForHS256
   expiration: 86400000 # 24 heures en millisecondes
+
+# ── Configuration Application ──────────────────────────────────────
+app:
+  frontend-url: http://localhost:4200
+  #https://magestionhotel.com
 
 # Configuration de la documentation API (Swagger)
 springdoc:

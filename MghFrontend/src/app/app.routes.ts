@@ -6,6 +6,8 @@ import { AuthGuard } from './guard/auth-guard';
 import { PermissionGuard } from './guard/permission-guard';
 import { DashboadHotel } from './components/dashboad-hotel/dashboad-hotel';
 import { Permission } from './services/permission.service';
+import {ForgotPassword} from './components/auth/forgot-password/forgot-password';
+import {ResetPassword} from './components/auth/reset-password/reset-password';
 
 export const routes: Routes = [
   {
@@ -306,6 +308,13 @@ export const routes: Routes = [
       hideFooter: true
     }
   },
+  {
+    path: 'forgot-password',
+    component: ForgotPassword
+  },
+  { path: 'reset-password', component: ResetPassword }
+
+  ,
   {
     path: '**',
     redirectTo: '/accueil'

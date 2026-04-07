@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { Router } from '@angular/router';
-import {environment} from '../../environment/environment';
+import { environment } from '../../environment/environment';
 
 export interface LoginRequest {
   email: string;
@@ -31,13 +31,23 @@ export interface LoginResponse {
   hotelId: number;
   hotelName: string;
   roles?: string[];
-  permissions?: string[];  // ✅ Ajouté : les permissions du backend (TypePermission[])
+  permissions?: string[];
 }
 
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+  accountType: 'HOTEL' | 'USER';
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
 }
 
 @Injectable({
@@ -80,7 +90,6 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.success && response.data) {
-            // Stocker l'utilisateur et le token
             localStorage.setItem('currentUser', JSON.stringify(response.data));
             localStorage.setItem('token', response.data.token);
             this.currentUserSubject.next(response.data);
@@ -94,6 +103,24 @@ export class AuthService {
     localStorage.removeItem('token');
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
+  }
+
+  // ── Mot de passe oublié ─────────────────────────────────────────
+
+  /** Étape 1 : Demande d'envoi d'email de réinitialisation */
+  forgotPassword(request: ForgotPasswordRequest): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/auth/forgot-password`, request);
+  }
+
+  /** Étape 2 : Validation du token (quand l'utilisateur ouvre le lien) */
+  validateResetToken(token: string): Observable<ApiResponse<void>> {
+    const params = new HttpParams().set('token', token);
+    return this.http.get<ApiResponse<void>>(`${this.apiUrl}/auth/validate-token`, { params });
+  }
+
+  /** Étape 3 : Réinitialisation du mot de passe */
+  resetPassword(request: ResetPasswordRequest): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/auth/reset-password`, request);
   }
 
   getAuthHeaders(): HttpHeaders {

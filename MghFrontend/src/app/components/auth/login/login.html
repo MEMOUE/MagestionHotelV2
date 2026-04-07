@@ -29,6 +29,18 @@
         </div>
       }
 
+      <!-- ✅ Message de succès après réinitialisation de mot de passe -->
+      @if (resetSuccess) {
+        <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
+          <div class="flex items-center">
+            <svg class="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <p class="text-sm text-green-700">Mot de passe réinitialisé avec succès ! Connectez-vous avec votre nouveau mot de passe.</p>
+          </div>
+        </div>
+      }
+
       <!-- Message d'erreur -->
       @if (errorMessage) {
         <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
@@ -45,33 +57,25 @@
 
         <!-- Sélection du type de compte -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-3">
-            Type de compte
-          </label>
+          <label class="block text-sm font-medium text-gray-700 mb-3">Type de compte</label>
           <div class="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              (click)="setAccountType('HOTEL')"
-              [class.bg-indigo-600]="selectedAccountType === 'HOTEL'"
-              [class.text-white]="selectedAccountType === 'HOTEL'"
-              [class.bg-white]="selectedAccountType !== 'HOTEL'"
-              [class.text-gray-700]="selectedAccountType !== 'HOTEL'"
-              class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
-            >
+            <button type="button" (click)="setAccountType('HOTEL')"
+                    [class.bg-indigo-600]="selectedAccountType === 'HOTEL'"
+                    [class.text-white]="selectedAccountType === 'HOTEL'"
+                    [class.bg-white]="selectedAccountType !== 'HOTEL'"
+                    [class.text-gray-700]="selectedAccountType !== 'HOTEL'"
+                    class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
               <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               Hôtel
             </button>
-            <button
-              type="button"
-              (click)="setAccountType('USER')"
-              [class.bg-indigo-600]="selectedAccountType === 'USER'"
-              [class.text-white]="selectedAccountType === 'USER'"
-              [class.bg-white]="selectedAccountType !== 'USER'"
-              [class.text-gray-700]="selectedAccountType !== 'USER'"
-              class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
-            >
+            <button type="button" (click)="setAccountType('USER')"
+                    [class.bg-indigo-600]="selectedAccountType === 'USER'"
+                    [class.text-white]="selectedAccountType === 'USER'"
+                    [class.bg-white]="selectedAccountType !== 'USER'"
+                    [class.text-gray-700]="selectedAccountType !== 'USER'"
+                    class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
               <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -82,45 +86,26 @@
 
         <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            formControlName="email"
-            class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
-            [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-            placeholder="votre@email.com"
-            autocomplete="email"
-          />
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input id="email" type="email" formControlName="email"
+                 class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+                 [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                 placeholder="votre@email.com" autocomplete="email" />
           @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-            <p class="mt-1 text-sm text-red-600">
-              Email invalide
-            </p>
+            <p class="mt-1 text-sm text-red-600">Email invalide</p>
           }
         </div>
 
         <!-- Mot de passe -->
         <div>
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-            Mot de passe
-          </label>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
           <div class="relative">
-            <input
-              id="password"
-              [type]="showPassword ? 'text' : 'password'"
-              formControlName="password"
-              class="appearance-none block w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
-              [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-              placeholder="••••••••"
-              autocomplete="current-password"
-            />
-            <button
-              type="button"
-              (click)="togglePasswordVisibility()"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-            >
+            <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
+                   class="appearance-none block w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+                   [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                   placeholder="••••••••" autocomplete="current-password" />
+            <button type="button" (click)="togglePasswordVisibility()"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
               @if (!showPassword) {
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -134,27 +119,20 @@
             </button>
           </div>
           @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-            <p class="mt-1 text-sm text-red-600">
-              Mot de passe requis
-            </p>
+            <p class="mt-1 text-sm text-red-600">Mot de passe requis</p>
           }
         </div>
 
-        <!-- Se souvenir de moi et Mot de passe oublié -->
+        <!-- Se souvenir + Mot de passe oublié -->
         <div class="flex items-center justify-between">
           <div class="flex items-center">
-            <input
-              id="remember"
-              type="checkbox"
-              formControlName="rememberMe"
-              class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-            />
-            <label for="remember" class="ml-2 block text-sm text-gray-700 cursor-pointer">
-              Se souvenir de moi
-            </label>
+            <input id="remember" type="checkbox" formControlName="rememberMe"
+                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer" />
+            <label for="remember" class="ml-2 block text-sm text-gray-700 cursor-pointer">Se souvenir de moi</label>
           </div>
           <div class="text-sm">
-            <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500 transition duration-150">
+            <!-- ✅ Lien vers la page mot de passe oublié -->
+            <a routerLink="/forgot-password" class="font-medium text-indigo-600 hover:text-indigo-500 transition duration-150">
               Mot de passe oublié ?
             </a>
           </div>
@@ -162,11 +140,8 @@
 
         <!-- Bouton de connexion -->
         <div>
-          <button
-            type="submit"
-            [disabled]="loginForm.invalid || loading"
-            class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150"
-          >
+          <button type="submit" [disabled]="loginForm.invalid || loading"
+                  class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150">
             @if (loading) {
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -189,9 +164,8 @@
       </form>
     </div>
 
-    <!-- Footer -->
     <div class="text-center text-sm text-gray-500">
       <p>&copy; 2025 MaGestionHotel. Tous droits réservés.</p>
     </div>
   </div>
-</div>  
+</div>
