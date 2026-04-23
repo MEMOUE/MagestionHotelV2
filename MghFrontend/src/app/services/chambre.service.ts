@@ -15,7 +15,7 @@ export interface Chambre {
   description?: string;
   statut: string;  // StatutChambre enum côté backend
   etage: number;
-  
+
   // Équipements (noms exacts du backend)
   wifi?: boolean;
   climatisation?: boolean;
@@ -24,7 +24,7 @@ export interface Chambre {
   coffre?: boolean;  // PAS coffre_fort
   balcon?: boolean;
   vueMer?: boolean;  // PAS vue_mer
-  
+
   // Champs en lecture seule
   hotelId?: number;
   hotelName?: string;
@@ -67,7 +67,7 @@ export class ChambreService {
    */
   getChambres(filters?: ChambreFilter): Observable<Chambre[]> {
     console.log('📥 Récupération des chambres avec filtres:', filters);
-    
+
     let params = new HttpParams();
     if (filters) {
       if (filters.hotelId) params = params.set('hotelId', filters.hotelId.toString());
@@ -97,7 +97,7 @@ export class ChambreService {
    */
   getChambre(id: number): Observable<Chambre> {
     console.log('📥 Récupération de la chambre ID:', id);
-    
+
     return this.http.get<ApiResponse<Chambre>>(`${this.apiUrl}/${id}`).pipe(
       map(response => {
         console.log('✅ Chambre récupérée:', response);
@@ -115,7 +115,7 @@ export class ChambreService {
    */
   createChambre(chambre: Chambre): Observable<Chambre> {
     console.log('📤 Création de chambre:', chambre);
-    
+
     return this.http.post<ApiResponse<Chambre>>(`${this.apiUrl}/create`, chambre).pipe(
       map(response => {
         console.log('✅ Chambre créée:', response);
@@ -137,7 +137,7 @@ export class ChambreService {
    */
   updateChambre(id: number, chambre: Partial<Chambre>): Observable<Chambre> {
     console.log('📤 Mise à jour de la chambre ID:', id, chambre);
-    
+
     return this.http.put<ApiResponse<Chambre>>(`${this.apiUrl}/${id}`, chambre).pipe(
       map(response => {
         console.log('✅ Chambre mise à jour:', response);
@@ -163,7 +163,7 @@ export class ChambreService {
    */
   deleteChambre(id: number): Observable<void> {
     console.log('🗑️ Suppression de la chambre ID:', id);
-    
+
     return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
       map(response => {
         console.log('✅ Chambre supprimée:', response);
@@ -184,7 +184,7 @@ export class ChambreService {
    */
   updateStatut(id: number, statut: string): Observable<void> {
     console.log('📤 Mise à jour du statut chambre ID:', id, 'vers', statut);
-    
+
     return this.http.put<ApiResponse<void>>(`${this.apiUrl}/${id}/statut?statut=${statut}`, {}).pipe(
       map(response => {
         console.log('✅ Statut mis à jour:', response);
@@ -201,7 +201,7 @@ export class ChambreService {
    */
   searchChambres(keyword: string): Observable<Chambre[]> {
     console.log('🔍 Recherche de chambres avec:', keyword);
-    
+
     return this.http.get<ApiResponse<Chambre[]>>(
       `${this.apiUrl}/search?keyword=${encodeURIComponent(keyword)}`
     ).pipe(
@@ -221,7 +221,7 @@ export class ChambreService {
    */
   getChambresByStatut(statut: string): Observable<Chambre[]> {
     console.log('📥 Récupération des chambres par statut:', statut);
-    
+
     return this.http.get<ApiResponse<Chambre[]>>(`${this.apiUrl}/statut/${statut}`).pipe(
       map(response => {
         console.log('✅ Chambres récupérées par statut:', response);
@@ -239,7 +239,7 @@ export class ChambreService {
    */
   getChambresByType(type: string): Observable<Chambre[]> {
     console.log('📥 Récupération des chambres par type:', type);
-    
+
     return this.http.get<ApiResponse<Chambre[]>>(`${this.apiUrl}/type/${type}`).pipe(
       map(response => {
         console.log('✅ Chambres récupérées par type:', response);
@@ -262,15 +262,15 @@ export class ChambreService {
     nombrePersonnes?: number
   ): Observable<Chambre[]> {
     console.log('📥 Vérification disponibilité:', { dateArrivee, dateDepart, typeChambre, nombrePersonnes });
-    
+
     const params: any = {
       dateArrivee,
       dateDepart
     };
-    
+
     if (typeChambre) params.typeChambre = typeChambre;
     if (nombrePersonnes) params.nombrePersonnes = nombrePersonnes;
-    
+
     return this.http.post<ApiResponse<Chambre[]>>(`${this.apiUrl}/disponibilite`, params).pipe(
       map(response => {
         console.log('✅ Chambres disponibles:', response);
@@ -288,7 +288,7 @@ export class ChambreService {
    */
   private handleError(error: any): Observable<never> {
     console.error('❌ Erreur HTTP:', error);
-    
+
     let errorMessage = 'Une erreur est survenue';
 
     if (error.error instanceof ErrorEvent) {
@@ -310,5 +310,22 @@ export class ChambreService {
     }
 
     return throwError(() => new Error(errorMessage));
+  }
+
+
+  updateStatutChambre(id: number, statut: string): Observable<any> {
+    return this.http.put<ApiResponse<void>>(
+      `${this.apiUrl}/${id}/statut`,
+      null,
+      { params: { statut } }
+    ).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      catchError(this.handleError)
+    );
   }
 }

@@ -151,20 +151,28 @@ export class DetailChambre implements OnInit, OnDestroy {
     this.showStatutDialog = true;
   }
 
+  /**
+   * ✅ CORRECTION : Utilise le endpoint dédié PUT /api/chambres/{id}/statut
+   *    au lieu de PUT /api/chambres/{id} (updateChambre complet).
+   *
+   *    PUT /{id}/statut exige PERMISSION_VOIR_RESERVATIONS (RECEPTION l'a).
+   *    PUT /{id}        exige PERMISSION_MODIFIER_CONFIGURATION (RECEPTION ne l'a PAS).
+   */
   changeStatut(): void {
     if (!this.chambreId || !this.nouveauStatut) return;
 
-    this.chambreService.updateChambre(this.chambreId, { statut: this.nouveauStatut })
+    this.chambreService.updateStatutChambre(this.chambreId, this.nouveauStatut)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (chambre) => {
-          this.chambre = chambre;
+        next: () => {
+          // Recharger la chambre pour avoir les données à jour
+          this.loadChambre(this.chambreId!);
           this.showSuccess('Succès', 'Statut mis à jour');
           this.showStatutDialog = false;
         },
         error: (error) => {
           console.error('Erreur:', error);
-          this.showError('Erreur', 'Impossible de changer le statut');
+          this.showError('Erreur', error.error?.message || 'Impossible de changer le statut');
         }
       });
   }
