@@ -122,15 +122,26 @@ export class Header implements OnInit, OnDestroy {
   // ─── Navigation mobile fiable ─────────────────────────────────
 
   /**
-   * Ferme le menu PUIS navigue via le Router.
-   * Évite le conflit routerLink + (click) + position:fixed sur mobile.
+   * Navigue d'abord, PUIS ferme le menu mobile une fois la transition initiée.
+   * Accepte désormais un fragment optionnel (ex: 'tarifs') pour gérer les ancres proprement.
    */
-  navigateMobile(path: string): void {
-    this.closeMobileMenu();
-    // Petit délai pour laisser l'animation de fermeture se terminer
+  navigateMobile(path: string, fragment?: string): void {
+    const navigationExtras = fragment ? { fragment: fragment } : {};
+
+    // 1. On lance la navigation d'abord pour sécuriser l'action sur mobile
+    this.router.navigate([path], navigationExtras).then(() => {
+      // 2. On ferme le menu une fois que la navigation est acceptée par le Router
+      this.closeMobileMenu();
+    });
+  }
+
+  /**
+   * Permet de fermer le menu avec un léger différé pour les ancres classiques (ex: href="#contact")
+   */
+  closeMenuWithDelay(): void {
     setTimeout(() => {
-      this.router.navigate([path]);
-    }, 50);
+      this.closeMobileMenu();
+    }, 150);
   }
 
   /**

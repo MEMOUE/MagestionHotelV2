@@ -2,11 +2,10 @@
   <div class="header-container">
     <div class="header-content">
 
-      <!-- Logo Section -->
       <div class="header-logo" [routerLink]="isAuthenticated ? ['/dashboard'] : ['/accueil']">
         <div class="logo-wrapper">
           <div class="logo-icon">
-            <img src="logo.png">
+            <img src="logo.png" alt="Logo">
           </div>
           <div class="logo-status"></div>
         </div>
@@ -16,7 +15,6 @@
         </div>
       </div>
 
-      <!-- Navigation Desktop - Non connecté -->
       <nav class="header-nav" *ngIf="!isAuthenticated">
         <a [routerLink]="['/accueil']" class="nav-link" fragment="accueil">Accueil</a>
         <a href="#fonctionnalites" class="nav-link">Fonctionnalités</a>
@@ -24,7 +22,6 @@
         <a href="#contact" class="nav-link">Contact</a>
       </nav>
 
-      <!-- Navigation Desktop - Connecté -->
       <nav class="header-nav" *ngIf="isAuthenticated">
         <a *ngIf="canSeePlanning"
            [routerLink]="['/planning']" routerLinkActive="active" class="nav-link">
@@ -57,9 +54,7 @@
         </a>
       </nav>
 
-      <!-- Actions Section -->
       <div class="header-actions">
-        <!-- Theme Toggle -->
         <button
           (click)="toggleTheme()"
           class="theme-toggle"
@@ -68,13 +63,11 @@
           <i class="pi" [ngClass]="isDarkMode() ? 'pi-sun' : 'pi-moon'"></i>
         </button>
 
-        <!-- Auth Buttons - Non connecté -->
         <div class="auth-buttons" *ngIf="!isAuthenticated">
           <button [routerLink]="['/login']" class="btn-login">Connexion</button>
           <button [routerLink]="['/register']" class="btn-demo">Inscription</button>
         </div>
 
-        <!-- Profile Menu - Connecté -->
         <div class="profile-section" *ngIf="isAuthenticated">
           <button class="profile-button" (click)="toggleProfileMenu()">
             <div class="profile-avatar">
@@ -84,7 +77,6 @@
             <i class="pi pi-angle-down"></i>
           </button>
 
-          <!-- Dropdown Profile Menu -->
           <div class="profile-dropdown" *ngIf="showProfileMenu">
             <div class="dropdown-header">
               <div class="dropdown-avatar">
@@ -126,7 +118,6 @@
           </div>
         </div>
 
-        <!-- Mobile Menu Button -->
         <button
           class="mobile-menu-btn"
           (click)="toggleMobileMenu()"
@@ -139,27 +130,21 @@
   </div>
 </header>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     MOBILE NAVIGATION — EN DEHORS DU <header> pour éviter
-     les conflits de position fixed imbriqués
-     ═══════════════════════════════════════════════════════════════ -->
-
-<!-- Mobile Navigation - Non connecté -->
 <div class="mobile-nav" [class.show]="showMobileMenu && !isAuthenticated">
   <nav class="mobile-nav-content">
-    <a [routerLink]="['/accueil']" class="mobile-nav-link" (click)="navigateMobile('/accueil')">
+    <a class="mobile-nav-link" (click)="navigateMobile('/accueil')">
       <i class="pi pi-home"></i>
       <span>Accueil</span>
     </a>
-    <a [routerLink]="['/accueil']" fragment="fonctionnalites" class="mobile-nav-link" (click)="closeMobileMenu()">
+    <a class="mobile-nav-link" (click)="navigateMobile('/accueil', 'fonctionnalites')">
       <i class="pi pi-sparkles"></i>
       <span>Fonctionnalités</span>
     </a>
-    <a [routerLink]="['/accueil']" fragment="tarifs" class="mobile-nav-link" (click)="closeMobileMenu()">
+    <a class="mobile-nav-link" (click)="navigateMobile('/accueil', 'tarifs')">
       <i class="pi pi-tag"></i>
       <span>Tarifs</span>
     </a>
-    <a href="#contact" class="mobile-nav-link" (click)="closeMobileMenu()">
+    <a href="#contact" class="mobile-nav-link" (click)="closeMenuWithDelay()">
       <i class="pi pi-envelope"></i>
       <span>Contact</span>
     </a>
@@ -173,10 +158,8 @@
   </nav>
 </div>
 
-<!-- Mobile Navigation - Connecté -->
 <div class="mobile-nav" [class.show]="showMobileMenu && isAuthenticated">
   <nav class="mobile-nav-content">
-    <!-- Profil utilisateur -->
     <div class="mobile-profile">
       <div class="mobile-profile-avatar">
         {{ getUserInitials() }}
@@ -265,6 +248,5 @@
   </nav>
 </div>
 
-<!-- Backdrop -->
 <div class="mobile-backdrop" [class.show]="showMobileMenu || showProfileMenu"
      (click)="closeMobileMenu(); closeProfileMenu()"></div>
