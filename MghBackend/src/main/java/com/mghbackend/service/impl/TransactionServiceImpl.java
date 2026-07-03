@@ -1,5 +1,7 @@
 package com.mghbackend.service.impl;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.StatistiquesFinanceDto;
 import com.mghbackend.dto.TransactionDto;
 import com.mghbackend.entity.CommandeRestaurant;
@@ -58,7 +60,7 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionDto getTransactionById(Long id) {
         return transactionRepository.findById(id)
                 .map(this::toDto)
-                .orElseThrow(() -> new RuntimeException("Transaction introuvable : " + id));
+                .orElseThrow(() -> new BusinessException("Transaction introuvable : " + id));
     }
 
     @Override
@@ -71,10 +73,10 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionDto updateTransaction(Long id, TransactionDto dto) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction introuvable : " + id));
+                .orElseThrow(() -> new BusinessException("Transaction introuvable : " + id));
 
         if (transaction.getStatut() != StatutTransaction.EN_ATTENTE) {
-            throw new RuntimeException("Seules les transactions EN_ATTENTE peuvent être modifiées");
+            throw new BusinessException("Seules les transactions EN_ATTENTE peuvent être modifiées");
         }
 
         transaction.setType(dto.getType());
@@ -96,9 +98,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public void deleteTransaction(Long id) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction introuvable : " + id));
+                .orElseThrow(() -> new BusinessException("Transaction introuvable : " + id));
         if (transaction.getStatut() != StatutTransaction.EN_ATTENTE) {
-            throw new RuntimeException("Seules les transactions EN_ATTENTE peuvent être supprimées");
+            throw new BusinessException("Seules les transactions EN_ATTENTE peuvent être supprimées");
         }
         transactionRepository.deleteById(id);
     }
@@ -138,9 +140,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionDto validerTransaction(Long id, String validePar) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction introuvable : " + id));
+                .orElseThrow(() -> new BusinessException("Transaction introuvable : " + id));
         if (transaction.getStatut() != StatutTransaction.EN_ATTENTE) {
-            throw new RuntimeException("Seules les transactions EN_ATTENTE peuvent être validées");
+            throw new BusinessException("Seules les transactions EN_ATTENTE peuvent être validées");
         }
         transaction.setStatut(StatutTransaction.VALIDEE);
         transaction.setValidePar(validePar);
@@ -152,10 +154,10 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionDto annulerTransaction(Long id, String motif) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction introuvable : " + id));
+                .orElseThrow(() -> new BusinessException("Transaction introuvable : " + id));
 
         if (transaction.getStatut() == StatutTransaction.ANNULEE) {
-            throw new RuntimeException("La transaction est déjà annulée");
+            throw new BusinessException("La transaction est déjà annulée");
         }
 
         // On mémorise l'ancien statut AVANT de modifier

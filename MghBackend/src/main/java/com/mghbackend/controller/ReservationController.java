@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.dto.request.AppliquerRemiseRequest;
 import com.mghbackend.dto.request.CreateReservationRequest;
@@ -40,7 +42,7 @@ public class ReservationController {
                     principal.getAccountType().equals("USER") ? principal.getId() : null);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Réservation créée avec succès", reservation));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -52,7 +54,7 @@ public class ReservationController {
     public ResponseEntity<ApiResponse<ReservationDto>> getReservation(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(ApiResponse.success(reservationService.getReservationById(id)));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -62,7 +64,7 @@ public class ReservationController {
     public ResponseEntity<ApiResponse<ReservationDto>> getReservationByNumero(@PathVariable String numero) {
         try {
             return ResponseEntity.ok(ApiResponse.success(reservationService.getReservationByNumero(numero)));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -74,7 +76,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getReservationsByHotel(principal.getHotelId())));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -87,7 +89,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getReservationsByHotelAndStatut(principal.getHotelId(), statut)));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -99,7 +101,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getReservationsByClient(clientId)));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -111,7 +113,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getArrivalsForToday(principal.getHotelId())));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -123,7 +125,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getDeparturesForToday(principal.getHotelId())));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -135,7 +137,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getReservationsEnCours(principal.getHotelId())));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -147,7 +149,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.getReservationsAVenir(principal.getHotelId())));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -160,7 +162,7 @@ public class ReservationController {
         try {
             return ResponseEntity.ok(ApiResponse.success(
                     reservationService.searchReservations(principal.getHotelId(), keyword)));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -181,7 +183,7 @@ public class ReservationController {
             ReservationDto reservation = reservationService.modifierReservation(id, request);
             return ResponseEntity.ok(ApiResponse.success(
                     "Réservation modifiée avec succès", reservation));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -197,7 +199,7 @@ public class ReservationController {
             ReservationDto reservation = reservationService.doCheckin(
                     id, principal.getAccountType().equals("USER") ? principal.getId() : null);
             return ResponseEntity.ok(ApiResponse.success("Check-in effectué avec succès", reservation));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -211,7 +213,7 @@ public class ReservationController {
             ReservationDto reservation = reservationService.doCheckout(
                     id, principal.getAccountType().equals("USER") ? principal.getId() : null);
             return ResponseEntity.ok(ApiResponse.success("Check-out effectué avec succès", reservation));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -222,7 +224,7 @@ public class ReservationController {
         try {
             reservationService.cancelReservation(id);
             return ResponseEntity.ok(ApiResponse.success("Réservation annulée avec succès", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -236,7 +238,7 @@ public class ReservationController {
         try {
             ReservationDto reservation = reservationService.addPaiement(id, montant, modePaiement);
             return ResponseEntity.ok(ApiResponse.success("Paiement enregistré avec succès", reservation));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -249,7 +251,7 @@ public class ReservationController {
         try {
             ReservationDto reservation = reservationService.appliquerRemise(id, request);
             return ResponseEntity.ok(ApiResponse.success("Remise appliquée avec succès", reservation));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

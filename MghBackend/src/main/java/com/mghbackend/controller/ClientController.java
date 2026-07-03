@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.dto.ClientDto;
 import com.mghbackend.security.CustomUserPrincipal;
@@ -31,7 +33,7 @@ public class ClientController {
             ClientDto client = clientService.createClient(principal.getHotelId(), clientDto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Client créé avec succès", client));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -43,7 +45,7 @@ public class ClientController {
         try {
             ClientDto client = clientService.getClientById(id);
             return ResponseEntity.ok(ApiResponse.success(client));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -56,7 +58,7 @@ public class ClientController {
         try {
             List<ClientDto> clients = clientService.getClientsByHotel(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(clients));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -70,7 +72,7 @@ public class ClientController {
         try {
             ClientDto client = clientService.getClientByEmail(principal.getHotelId(), email);
             return ResponseEntity.ok(ApiResponse.success(client));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -84,7 +86,7 @@ public class ClientController {
         try {
             ClientDto client = clientService.getClientByTelephone(principal.getHotelId(), telephone);
             return ResponseEntity.ok(ApiResponse.success(client));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -98,7 +100,7 @@ public class ClientController {
         try {
             List<ClientDto> clients = clientService.searchClients(principal.getHotelId(), keyword);
             return ResponseEntity.ok(ApiResponse.success(clients));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -112,7 +114,7 @@ public class ClientController {
         try {
             List<ClientDto> clients = clientService.getClientsFideles(principal.getHotelId(), minReservations);
             return ResponseEntity.ok(ApiResponse.success(clients));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -126,7 +128,7 @@ public class ClientController {
         try {
             ClientDto client = clientService.updateClient(id, clientDto);
             return ResponseEntity.ok(ApiResponse.success("Client mis à jour avec succès", client));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -138,7 +140,7 @@ public class ClientController {
         try {
             clientService.deleteClient(id);
             return ResponseEntity.ok(ApiResponse.success("Client supprimé avec succès", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }

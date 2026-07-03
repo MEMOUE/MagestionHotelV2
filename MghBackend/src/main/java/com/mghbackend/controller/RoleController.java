@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.entity.Role;
 import com.mghbackend.repository.RoleRepository;
@@ -24,7 +26,7 @@ public class RoleController {
 		try {
 			List<Role> roles = roleRepository.findAll();
 			return ResponseEntity.ok(ApiResponse.success(roles));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}

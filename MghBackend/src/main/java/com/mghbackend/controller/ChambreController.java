@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.dto.ChambreDto;
 import com.mghbackend.dto.request.DisponibiliteChambreRequest;
@@ -45,7 +47,7 @@ public class ChambreController {
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Chambre créée avec succès", chambre));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             log.error("❌ Erreur création chambre: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
@@ -58,7 +60,7 @@ public class ChambreController {
         try {
             ChambreDto chambre = chambreService.getChambreById(id);
             return ResponseEntity.ok(ApiResponse.success(chambre));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -72,7 +74,7 @@ public class ChambreController {
             log.info("📋 Liste chambres - HotelId: {}", principal.getHotelId());
             List<ChambreDto> chambres = chambreService.getChambresByHotel(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(chambres));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -87,7 +89,7 @@ public class ChambreController {
             List<ChambreDto> chambres = chambreService.getChambresByHotelAndStatut(
                     principal.getHotelId(), statut);
             return ResponseEntity.ok(ApiResponse.success(chambres));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -102,7 +104,7 @@ public class ChambreController {
             List<ChambreDto> chambres = chambreService.getChambresByHotelAndType(
                     principal.getHotelId(), type);
             return ResponseEntity.ok(ApiResponse.success(chambres));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -117,7 +119,7 @@ public class ChambreController {
             List<ChambreDto> chambres = chambreService.searchChambres(
                     principal.getHotelId(), keyword);
             return ResponseEntity.ok(ApiResponse.success(chambres));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -132,7 +134,7 @@ public class ChambreController {
             List<ChambreDto> chambres = chambreService.getChambresDisponibles(
                     principal.getHotelId(), request);
             return ResponseEntity.ok(ApiResponse.success(chambres));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -146,7 +148,7 @@ public class ChambreController {
         try {
             ChambreDto chambre = chambreService.updateChambre(id, chambreDto);
             return ResponseEntity.ok(ApiResponse.success("Chambre mise à jour avec succès", chambre));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -160,7 +162,7 @@ public class ChambreController {
         try {
             chambreService.updateStatut(id, statut);
             return ResponseEntity.ok(ApiResponse.success("Statut de la chambre mis à jour", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -172,7 +174,7 @@ public class ChambreController {
         try {
             chambreService.deleteChambre(id);
             return ResponseEntity.ok(ApiResponse.success("Chambre supprimée avec succès", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }

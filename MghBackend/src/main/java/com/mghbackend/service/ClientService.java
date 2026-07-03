@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.ClientDto;
 import com.mghbackend.entity.Client;
 import com.mghbackend.entity.Hotel;
@@ -22,12 +24,12 @@ public class ClientService {
 
     public ClientDto createClient(Long hotelId, ClientDto clientDto) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         // Vérifier si un client avec cet email existe déjà
         if (clientDto.getEmail() != null && !clientDto.getEmail().isEmpty() &&
                 clientRepository.existsByHotelAndEmail(hotel, clientDto.getEmail())) {
-            throw new RuntimeException("Un client avec cet email existe déjà");
+            throw new BusinessException("Un client avec cet email existe déjà");
         }
 
         Client client = new Client();
@@ -52,32 +54,32 @@ public class ClientService {
     @Transactional(readOnly = true)
     public ClientDto getClientById(Long id) {
         Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                .orElseThrow(() -> new BusinessException("Client non trouvé"));
         return convertToDto(client);
     }
 
     @Transactional(readOnly = true)
     public ClientDto getClientByEmail(Long hotelId, String email) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         Client client = clientRepository.findByHotelAndEmail(hotel, email)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                .orElseThrow(() -> new BusinessException("Client non trouvé"));
         return convertToDto(client);
     }
 
     @Transactional(readOnly = true)
     public ClientDto getClientByTelephone(Long hotelId, String telephone) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         Client client = clientRepository.findByHotelAndTelephone(hotel, telephone)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                .orElseThrow(() -> new BusinessException("Client non trouvé"));
         return convertToDto(client);
     }
 
     @Transactional(readOnly = true)
     public List<ClientDto> getClientsByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return clientRepository.findByHotel(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -86,7 +88,7 @@ public class ClientService {
     @Transactional(readOnly = true)
     public List<ClientDto> searchClients(Long hotelId, String keyword) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return clientRepository.searchByHotelAndKeyword(hotel, keyword).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -95,7 +97,7 @@ public class ClientService {
     @Transactional(readOnly = true)
     public List<ClientDto> getClientsFideles(Long hotelId, int minReservations) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return clientRepository.findClientsFideles(hotel, minReservations).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -103,13 +105,13 @@ public class ClientService {
 
     public ClientDto updateClient(Long id, ClientDto clientDto) {
         Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                .orElseThrow(() -> new BusinessException("Client non trouvé"));
 
         // Vérifier l'unicité de l'email si changé
         if (clientDto.getEmail() != null && !clientDto.getEmail().isEmpty() &&
                 !client.getEmail().equals(clientDto.getEmail()) &&
                 clientRepository.existsByHotelAndEmail(client.getHotel(), clientDto.getEmail())) {
-            throw new RuntimeException("Un client avec cet email existe déjà");
+            throw new BusinessException("Un client avec cet email existe déjà");
         }
 
         client.setPrenom(clientDto.getPrenom());
@@ -131,11 +133,11 @@ public class ClientService {
 
     public void deleteClient(Long id) {
         Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                .orElseThrow(() -> new BusinessException("Client non trouvé"));
 
         // Vérifier s'il y a des réservations
         if (!client.getReservations().isEmpty()) {
-            throw new RuntimeException("Impossible de supprimer un client avec des réservations");
+            throw new BusinessException("Impossible de supprimer un client avec des réservations");
         }
 
         clientRepository.delete(client);

@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.request.ForgotPasswordRequest;
 import com.mghbackend.dto.request.ResetPasswordRequest;
 import com.mghbackend.entity.Hotel;
@@ -44,20 +46,20 @@ public class PasswordResetService {
         String recipientName;
         if ("HOTEL".equals(accountType)) {
             Hotel hotel = hotelRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Aucun compte hôtel trouvé avec cet email"));
+                    .orElseThrow(() -> new BusinessException("Aucun compte hôtel trouvé avec cet email"));
             if (!hotel.getActive()) {
-                throw new RuntimeException("Ce compte hôtel est désactivé");
+                throw new BusinessException("Ce compte hôtel est désactivé");
             }
             recipientName = hotel.getName();
         } else if ("USER".equals(accountType)) {
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Aucun compte employé trouvé avec cet email"));
+                    .orElseThrow(() -> new BusinessException("Aucun compte employé trouvé avec cet email"));
             if (!user.getActive()) {
-                throw new RuntimeException("Ce compte employé est désactivé");
+                throw new BusinessException("Ce compte employé est désactivé");
             }
             recipientName = user.getFirstName() + " " + user.getLastName();
         } else {
-            throw new RuntimeException("Type de compte invalide");
+            throw new BusinessException("Type de compte invalide");
         }
 
         // Invalider les anciens tokens non utilisés
@@ -88,10 +90,10 @@ public class PasswordResetService {
     @Transactional(readOnly = true)
     public void validateToken(String token) {
         PasswordResetToken resetToken = tokenRepository.findByTokenAndUsedFalse(token)
-                .orElseThrow(() -> new RuntimeException("Token invalide ou déjà utilisé"));
+                .orElseThrow(() -> new BusinessException("Token invalide ou déjà utilisé"));
 
         if (resetToken.isExpired()) {
-            throw new RuntimeException("Ce lien a expiré. Veuillez refaire une demande de réinitialisation.");
+            throw new BusinessException("Ce lien a expiré. Veuillez refaire une demande de réinitialisation.");
         }
     }
 
@@ -100,10 +102,10 @@ public class PasswordResetService {
      */
     public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken resetToken = tokenRepository.findByTokenAndUsedFalse(request.getToken())
-                .orElseThrow(() -> new RuntimeException("Token invalide ou déjà utilisé"));
+                .orElseThrow(() -> new BusinessException("Token invalide ou déjà utilisé"));
 
         if (resetToken.isExpired()) {
-            throw new RuntimeException("Ce lien a expiré. Veuillez refaire une demande de réinitialisation.");
+            throw new BusinessException("Ce lien a expiré. Veuillez refaire une demande de réinitialisation.");
         }
 
         String email = resetToken.getEmail();
@@ -112,14 +114,14 @@ public class PasswordResetService {
 
         if ("HOTEL".equals(accountType)) {
             Hotel hotel = hotelRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Compte hôtel introuvable"));
+                    .orElseThrow(() -> new BusinessException("Compte hôtel introuvable"));
             hotel.setPassword(encodedPassword);
             hotelRepository.save(hotel);
             log.info("✅ Mot de passe réinitialisé pour l'hôtel : {}", email);
 
         } else if ("USER".equals(accountType)) {
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Compte employé introuvable"));
+                    .orElseThrow(() -> new BusinessException("Compte employé introuvable"));
             user.setPassword(encodedPassword);
             userRepository.save(user);
             log.info("✅ Mot de passe réinitialisé pour l'employé : {}", email);

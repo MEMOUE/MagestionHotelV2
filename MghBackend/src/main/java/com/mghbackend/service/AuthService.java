@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.request.LoginRequest;
 import com.mghbackend.dto.reponse.LoginResponse;
 import com.mghbackend.entity.*;
@@ -31,16 +33,16 @@ public class AuthService {
 		} else if ("USER".equals(request.getAccountType())) {
 			return authenticateUser(request);
 		} else {
-			throw new RuntimeException("Type de compte invalide");
+			throw new BusinessException("Type de compte invalide");
 		}
 	}
 
 	private LoginResponse authenticateHotel(LoginRequest request) {
 		Hotel hotel = hotelRepository.findByEmailAndActiveTrue(request.getEmail())
-				.orElseThrow(() -> new RuntimeException("Email ou mot de passe incorrect"));
+				.orElseThrow(() -> new BusinessException("Email ou mot de passe incorrect"));
 
 		if (!passwordEncoder.matches(request.getPassword(), hotel.getPassword())) {
-			throw new RuntimeException("Email ou mot de passe incorrect");
+			throw new BusinessException("Email ou mot de passe incorrect");
 		}
 
 		String token = jwtUtil.generateToken(hotel.getEmail(), "HOTEL", hotel.getId());
@@ -60,10 +62,10 @@ public class AuthService {
 
 	private LoginResponse authenticateUser(LoginRequest request) {
 		User user = userRepository.findByEmailAndActiveTrue(request.getEmail())
-				.orElseThrow(() -> new RuntimeException("Email ou mot de passe incorrect"));
+				.orElseThrow(() -> new BusinessException("Email ou mot de passe incorrect"));
 
 		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-			throw new RuntimeException("Email ou mot de passe incorrect");
+			throw new BusinessException("Email ou mot de passe incorrect");
 		}
 
 		String token = jwtUtil.generateToken(user.getEmail(), "USER", user.getId());

@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.MouvementStockDto;
 import com.mghbackend.dto.ProduitDto;
 import com.mghbackend.entity.*;
@@ -33,10 +35,10 @@ public class ProduitService {
 
     public ProduitDto createProduit(Long hotelId, ProduitDto dto) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         if (produitRepository.findByCode(dto.getCode()).isPresent()) {
-            throw new RuntimeException("Un produit avec ce code existe déjà");
+            throw new BusinessException("Un produit avec ce code existe déjà");
         }
 
         Produit produit = new Produit();
@@ -54,7 +56,7 @@ public class ProduitService {
 
         if (dto.getFournisseurId() != null) {
             Fournisseur fournisseur = fournisseurRepository.findById(dto.getFournisseurId())
-                    .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé"));
+                    .orElseThrow(() -> new BusinessException("Fournisseur non trouvé"));
             produit.setFournisseur(fournisseur);
         }
 
@@ -64,7 +66,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<ProduitDto> getProduitsByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return produitRepository.findByHotel(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -73,7 +75,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<ProduitDto> getProduitsEnRupture(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return produitRepository.findProduitsEnRuptureStock(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -90,7 +92,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<ProduitDto> getMenuParType(Long hotelId, TypeProduit typeProduit) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return produitRepository
                 .findByHotelAndTypeProduitAndDisponibleTrue(hotel, typeProduit).stream()
                 .map(this::convertToDto)
@@ -103,7 +105,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<ProduitDto> getMenuComplet(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return produitRepository.findByHotelAndDisponibleTrue(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -117,7 +119,7 @@ public class ProduitService {
                              TypeMouvement type, String motif, Long userId) {
 
         Produit produit = produitRepository.findById(produitId)
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
+                .orElseThrow(() -> new BusinessException("Produit non trouvé"));
 
         switch (type) {
             case ENTREE:
@@ -130,7 +132,7 @@ public class ProduitService {
 
             case SORTIE:
                 if (produit.getQuantiteStock().compareTo(quantite) < 0) {
-                    throw new RuntimeException("Stock insuffisant pour le produit : " + produit.getNom());
+                    throw new BusinessException("Stock insuffisant pour le produit : " + produit.getNom());
                 }
                 produit.setQuantiteStock(produit.getQuantiteStock().subtract(quantite));
                 // Si stock épuisé, marquer indisponible automatiquement
@@ -208,7 +210,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public ProduitDto getProduitById(Long id) {
         Produit produit = produitRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
+                .orElseThrow(() -> new BusinessException("Produit non trouvé"));
         return convertToDto(produit);
     }
 
@@ -219,7 +221,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<MouvementStockDto> getHistoriqueByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return mouvementStockRepository.findByHotelOrderByDateMouvementDesc(hotel).stream()
                 .map(this::convertMouvementToDto)
                 .collect(Collectors.toList());
@@ -231,7 +233,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<MouvementStockDto> getHistoriqueByProduit(Long produitId) {
         Produit produit = produitRepository.findById(produitId)
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
+                .orElseThrow(() -> new BusinessException("Produit non trouvé"));
         return mouvementStockRepository.findByProduitOrderByDateMouvementDesc(produit).stream()
                 .map(this::convertMouvementToDto)
                 .collect(Collectors.toList());
@@ -261,12 +263,12 @@ public class ProduitService {
 
     public void deleteProduit(Long produitId) {
         Produit produit = produitRepository.findById(produitId)
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
+                .orElseThrow(() -> new BusinessException("Produit non trouvé"));
 
         // 1. Vérifier s'il y a des lignes de commande liées
         List<LigneCommande> lignes = ligneCommandeRepository.findByProduit(produit);
         if (!lignes.isEmpty()) {
-            throw new RuntimeException(
+            throw new BusinessException(
                     "Impossible de supprimer ce produit : il est utilisé dans "
                             + lignes.size() + " commande(s) restaurant.");
         }

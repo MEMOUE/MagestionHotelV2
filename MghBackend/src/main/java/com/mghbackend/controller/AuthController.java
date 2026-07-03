@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.dto.request.ForgotPasswordRequest;
 import com.mghbackend.dto.request.LoginRequest;
@@ -27,7 +29,7 @@ public class AuthController {
         try {
             LoginResponse response = authService.authenticate(request);
             return ResponseEntity.ok(ApiResponse.success("Connexion réussie", response));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -47,7 +49,7 @@ public class AuthController {
             passwordResetService.requestPasswordReset(request);
             return ResponseEntity.ok(ApiResponse.success(
                     "Un email de réinitialisation a été envoyé à " + request.getEmail(), null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -64,7 +66,7 @@ public class AuthController {
         try {
             passwordResetService.validateToken(token);
             return ResponseEntity.ok(ApiResponse.success("Token valide", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -83,7 +85,7 @@ public class AuthController {
             passwordResetService.resetPassword(request);
             return ResponseEntity.ok(ApiResponse.success(
                     "Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }

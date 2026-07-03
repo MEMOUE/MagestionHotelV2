@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.CommandeRestaurantDto;
 import com.mghbackend.dto.LigneCommandeDto;
 import com.mghbackend.entity.*;
@@ -39,7 +41,7 @@ public class CommandeRestaurantService {
                                                 CommandeRestaurantDto dto,
                                                 Long userId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         CommandeRestaurant commande = new CommandeRestaurant();
         commande.setHotel(hotel);
@@ -53,11 +55,11 @@ public class CommandeRestaurantService {
             commande.setTelephoneClientExterne(dto.getTelephoneClientExterne());
         } else if (dto.getClientId() != null) {
             Client client = clientRepository.findById(dto.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                    .orElseThrow(() -> new BusinessException("Client non trouvé"));
             commande.setClient(client);
         } else if (dto.getReservationId() != null) {
             Reservation reservation = reservationRepository.findById(dto.getReservationId())
-                    .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                    .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
             commande.setReservation(reservation);
         }
 
@@ -69,18 +71,18 @@ public class CommandeRestaurantService {
 
         for (LigneCommandeDto ligneDto : dto.getLignes()) {
             Produit produit = produitRepository.findById(ligneDto.getProduitId())
-                    .orElseThrow(() -> new RuntimeException(
+                    .orElseThrow(() -> new BusinessException(
                             "Produit non trouvé : id=" + ligneDto.getProduitId()));
 
             if (!produit.getDisponible()) {
-                throw new RuntimeException(
+                throw new BusinessException(
                         "Le produit '" + produit.getNom() + "' n'est pas disponible");
             }
 
             BigDecimal qte = BigDecimal.valueOf(ligneDto.getQuantite());
 
             if (produit.getQuantiteStock().compareTo(qte) < 0) {
-                throw new RuntimeException(
+                throw new BusinessException(
                         "Stock insuffisant pour '" + produit.getNom() +
                                 "'. Stock disponible : " + produit.getQuantiteStock() +
                                 " " + produit.getUnite());
@@ -126,7 +128,7 @@ public class CommandeRestaurantService {
     @Transactional(readOnly = true)
     public List<CommandeRestaurantDto> getCommandesByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return commandeRepository.findByHotel(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -134,7 +136,7 @@ public class CommandeRestaurantService {
 
     public CommandeRestaurantDto getCommandeById(Long id) {
         CommandeRestaurant commandeRestaurant = commandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande introuvable avec id: " + id));
+                .orElseThrow(() -> new BusinessException("Commande introuvable avec id: " + id));
         return convertToDto(commandeRestaurant);
     }
 
@@ -145,7 +147,7 @@ public class CommandeRestaurantService {
     public CommandeRestaurantDto updateStatut(Long commandeId,
                                               StatutCommandeRestaurant statut) {
         CommandeRestaurant commande = commandeRepository.findById(commandeId)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
+                .orElseThrow(() -> new BusinessException("Commande non trouvée"));
         commande.setStatut(statut);
 
         if (statut == StatutCommandeRestaurant.SERVIE) {
@@ -188,7 +190,7 @@ public class CommandeRestaurantService {
 
     public CommandeRestaurantDto addPaiement(Long commandeId, BigDecimal montant) {
         CommandeRestaurant commande = commandeRepository.findById(commandeId)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
+                .orElseThrow(() -> new BusinessException("Commande non trouvée"));
 
         BigDecimal nouveauMontantPaye = commande.getMontantPaye().add(montant);
         commande.setMontantPaye(nouveauMontantPaye);
@@ -213,13 +215,13 @@ public class CommandeRestaurantService {
 
     public CommandeRestaurantDto appliquerRemise(Long commandeId, BigDecimal remise) {
         CommandeRestaurant commande = commandeRepository.findById(commandeId)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
+                .orElseThrow(() -> new BusinessException("Commande non trouvée"));
 
         if (commande.getStatut() == StatutCommandeRestaurant.ANNULEE) {
-            throw new RuntimeException("Impossible d'appliquer une remise sur une commande annulée");
+            throw new BusinessException("Impossible d'appliquer une remise sur une commande annulée");
         }
         if (remise.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("La remise ne peut pas être négative");
+            throw new BusinessException("La remise ne peut pas être négative");
         }
 
         // Calculer le montant brut (somme des lignes)
@@ -228,7 +230,7 @@ public class CommandeRestaurantService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (remise.compareTo(montantBrut) > 0) {
-            throw new RuntimeException("La remise (" + remise +
+            throw new BusinessException("La remise (" + remise +
                     ") ne peut pas dépasser le montant brut (" + montantBrut + ")");
         }
 
@@ -306,7 +308,7 @@ public class CommandeRestaurantService {
     @Transactional(readOnly = true)
     public List<CommandeRestaurantDto> getCommandesByReservation(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
         return commandeRepository.findByReservation(reservation).stream()
                 .filter(c -> c.getStatut() != StatutCommandeRestaurant.ANNULEE)
                 .map(this::convertToDto)

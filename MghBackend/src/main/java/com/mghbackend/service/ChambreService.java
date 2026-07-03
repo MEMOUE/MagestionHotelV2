@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.ChambreDto;
 import com.mghbackend.dto.request.DisponibiliteChambreRequest;
 import com.mghbackend.entity.Chambre;
@@ -26,10 +28,10 @@ public class ChambreService {
 
     public ChambreDto createChambre(Long hotelId, ChambreDto chambreDto) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         if (chambreRepository.existsByHotelAndNumero(hotel, chambreDto.getNumero())) {
-            throw new RuntimeException("Une chambre avec ce numéro existe déjà");
+            throw new BusinessException("Une chambre avec ce numéro existe déjà");
         }
 
         Chambre chambre = new Chambre();
@@ -61,14 +63,14 @@ public class ChambreService {
     @Transactional(readOnly = true)
     public ChambreDto getChambreById(Long id) {
         Chambre chambre = chambreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chambre non trouvée"));
+                .orElseThrow(() -> new BusinessException("Chambre non trouvée"));
         return convertToDto(chambre);
     }
 
     @Transactional(readOnly = true)
     public List<ChambreDto> getChambresByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return chambreRepository.findByHotel(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -77,7 +79,7 @@ public class ChambreService {
     @Transactional(readOnly = true)
     public List<ChambreDto> getChambresByHotelAndStatut(Long hotelId, StatutChambre statut) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return chambreRepository.findByHotelAndStatut(hotel, statut).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -86,7 +88,7 @@ public class ChambreService {
     @Transactional(readOnly = true)
     public List<ChambreDto> getChambresByHotelAndType(Long hotelId, TypeChambre type) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return chambreRepository.findByHotelAndType(hotel, type).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -95,7 +97,7 @@ public class ChambreService {
     @Transactional(readOnly = true)
     public List<ChambreDto> searchChambres(Long hotelId, String keyword) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return chambreRepository.searchByHotelAndKeyword(hotel, keyword).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -104,10 +106,10 @@ public class ChambreService {
     @Transactional(readOnly = true)
     public List<ChambreDto> getChambresDisponibles(Long hotelId, DisponibiliteChambreRequest request) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         if (request.getDateArrivee().isAfter(request.getDateDepart())) {
-            throw new RuntimeException("La date d'arrivée doit être avant la date de départ");
+            throw new BusinessException("La date d'arrivée doit être avant la date de départ");
         }
 
         List<Chambre> chambres;
@@ -140,12 +142,12 @@ public class ChambreService {
 
     public ChambreDto updateChambre(Long id, ChambreDto chambreDto) {
         Chambre chambre = chambreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chambre non trouvée"));
+                .orElseThrow(() -> new BusinessException("Chambre non trouvée"));
 
         // Vérifier l'unicité du numéro si changé
         if (!chambre.getNumero().equals(chambreDto.getNumero()) &&
                 chambreRepository.existsByHotelAndNumero(chambre.getHotel(), chambreDto.getNumero())) {
-            throw new RuntimeException("Une chambre avec ce numéro existe déjà");
+            throw new BusinessException("Une chambre avec ce numéro existe déjà");
         }
 
         chambre.setNumero(chambreDto.getNumero());
@@ -174,14 +176,14 @@ public class ChambreService {
 
     public void updateStatut(Long id, StatutChambre statut) {
         Chambre chambre = chambreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chambre non trouvée"));
+                .orElseThrow(() -> new BusinessException("Chambre non trouvée"));
         chambre.setStatut(statut);
         chambreRepository.save(chambre);
     }
 
     public void deleteChambre(Long id) {
         Chambre chambre = chambreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chambre non trouvée"));
+                .orElseThrow(() -> new BusinessException("Chambre non trouvée"));
 
         // Vérifier s'il y a des réservations actives
         if (!chambre.getReservations().isEmpty()) {
@@ -189,7 +191,7 @@ public class ChambreService {
                     .anyMatch(r -> r.getStatut() == com.mghbackend.enums.StatutReservation.CONFIRMEE ||
                             r.getStatut() == com.mghbackend.enums.StatutReservation.EN_COURS);
             if (hasActiveReservations) {
-                throw new RuntimeException("Impossible de supprimer une chambre avec des réservations actives");
+                throw new BusinessException("Impossible de supprimer une chambre avec des réservations actives");
             }
         }
 

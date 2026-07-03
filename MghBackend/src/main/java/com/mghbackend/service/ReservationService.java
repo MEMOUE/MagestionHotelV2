@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.ClientDto;
 import com.mghbackend.dto.request.AppliquerRemiseRequest;
 import com.mghbackend.dto.request.CreateReservationRequest;
@@ -38,36 +40,36 @@ public class ReservationService {
 
     public ReservationDto createReservation(Long hotelId, CreateReservationRequest request, Long userId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         Chambre chambre = chambreRepository.findById(request.getChambreId())
-                .orElseThrow(() -> new RuntimeException("Chambre non trouvée"));
+                .orElseThrow(() -> new BusinessException("Chambre non trouvée"));
 
         if (!chambre.getHotel().getId().equals(hotelId)) {
-            throw new RuntimeException("Cette chambre n'appartient pas à cet hôtel");
+            throw new BusinessException("Cette chambre n'appartient pas à cet hôtel");
         }
 
         if (request.getDateArrivee().isAfter(request.getDateDepart())) {
-            throw new RuntimeException("La date d'arrivée doit être avant la date de départ");
+            throw new BusinessException("La date d'arrivée doit être avant la date de départ");
         }
 
         List<Reservation> conflits = reservationRepository.findReservationsByChambreAndPeriode(
                 chambre, request.getDateArrivee(), request.getDateDepart());
 
         if (!conflits.isEmpty()) {
-            throw new RuntimeException("La chambre n'est pas disponible pour cette période");
+            throw new BusinessException("La chambre n'est pas disponible pour cette période");
         }
 
         Client client;
         if (request.getClientId() != null) {
             client = clientRepository.findById(request.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                    .orElseThrow(() -> new BusinessException("Client non trouvé"));
         } else if (request.getNewClient() != null) {
             ClientDto clientDto = clientService.createClient(hotelId, request.getNewClient());
             client = clientRepository.findById(clientDto.getId())
-                    .orElseThrow(() -> new RuntimeException("Erreur lors de la création du client"));
+                    .orElseThrow(() -> new BusinessException("Erreur lors de la création du client"));
         } else {
-            throw new RuntimeException("Client requis");
+            throw new BusinessException("Client requis");
         }
 
         long nombreNuits = ChronoUnit.DAYS.between(request.getDateArrivee(), request.getDateDepart());
@@ -132,13 +134,13 @@ public class ReservationService {
 
     public ReservationDto appliquerRemise(Long id, AppliquerRemiseRequest request) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (reservation.getStatut() == StatutReservation.ANNULEE) {
-            throw new RuntimeException("Impossible d'appliquer une remise sur une réservation annulée");
+            throw new BusinessException("Impossible d'appliquer une remise sur une réservation annulée");
         }
         if (reservation.getStatut() == StatutReservation.TERMINEE) {
-            throw new RuntimeException("Impossible d'appliquer une remise sur une réservation terminée");
+            throw new BusinessException("Impossible d'appliquer une remise sur une réservation terminée");
         }
 
         BigDecimal remiseJourn = request.getRemiseJournaliere() != null
@@ -148,14 +150,14 @@ public class ReservationService {
 
         // Validation : la remise journalière ne doit pas dépasser le prix par nuit
         if (remiseJourn.compareTo(reservation.getPrixParNuit()) > 0) {
-            throw new RuntimeException("La remise journalière (" + remiseJourn +
+            throw new BusinessException("La remise journalière (" + remiseJourn +
                     ") ne peut pas dépasser le prix par nuit (" + reservation.getPrixParNuit() + ")");
         }
         if (remiseJourn.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("La remise journalière ne peut pas être négative");
+            throw new BusinessException("La remise journalière ne peut pas être négative");
         }
         if (remiseTotal.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("La remise totale ne peut pas être négative");
+            throw new BusinessException("La remise totale ne peut pas être négative");
         }
 
         reservation.setRemiseJournaliere(remiseJourn);
@@ -215,22 +217,22 @@ public class ReservationService {
 
     public ReservationDto modifierReservation(Long id, UpdateReservationRequest request) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (reservation.getStatut() == StatutReservation.ANNULEE) {
-            throw new RuntimeException("Impossible de modifier une réservation annulée");
+            throw new BusinessException("Impossible de modifier une réservation annulée");
         }
         if (reservation.getStatut() == StatutReservation.TERMINEE) {
-            throw new RuntimeException("Impossible de modifier une réservation terminée");
+            throw new BusinessException("Impossible de modifier une réservation terminée");
         }
 
         if (request.getDateArrivee().isAfter(request.getDateDepart())) {
-            throw new RuntimeException("La date d'arrivée doit être avant la date de départ");
+            throw new BusinessException("La date d'arrivée doit être avant la date de départ");
         }
 
         if (reservation.getStatut() == StatutReservation.EN_COURS) {
             if (!request.getDateArrivee().equals(reservation.getDateArrivee())) {
-                throw new RuntimeException(
+                throw new BusinessException(
                         "Le client est déjà arrivé : la date d'arrivée ne peut plus être modifiée.");
             }
         }
@@ -247,7 +249,7 @@ public class ReservationService {
                             id
                     );
             if (!conflits.isEmpty()) {
-                throw new RuntimeException("La chambre n'est pas disponible pour ces nouvelles dates.");
+                throw new BusinessException("La chambre n'est pas disponible pour ces nouvelles dates.");
             }
         }
 
@@ -273,19 +275,19 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public ReservationDto getReservationById(Long id) {
         return convertToDto(reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée")));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée")));
     }
 
     @Transactional(readOnly = true)
     public ReservationDto getReservationByNumero(String numeroReservation) {
         return convertToDto(reservationRepository.findByNumeroReservation(numeroReservation)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée")));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée")));
     }
 
     @Transactional(readOnly = true)
     public List<ReservationDto> getReservationsByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.findByHotel(hotel).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -293,7 +295,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> getReservationsByHotelAndStatut(Long hotelId, StatutReservation statut) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.findByHotelAndStatut(hotel, statut).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -301,7 +303,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> getReservationsByClient(Long clientId) {
         Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                .orElseThrow(() -> new BusinessException("Client non trouvé"));
         return reservationRepository.findByClient(client).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -309,7 +311,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> getArrivalsForToday(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.findArrivalsForToday(hotel, LocalDate.now()).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -317,7 +319,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> getDeparturesForToday(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.findDeparturesForToday(hotel, LocalDate.now()).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -325,7 +327,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> getReservationsEnCours(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.findReservationsEnCours(hotel).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -333,7 +335,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> getReservationsAVenir(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.findReservationsAVenir(hotel, LocalDate.now()).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -341,7 +343,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationDto> searchReservations(Long hotelId, String keyword) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return reservationRepository.searchByHotelAndKeyword(hotel, keyword).stream()
                 .map(this::convertToDto).collect(Collectors.toList());
     }
@@ -350,10 +352,10 @@ public class ReservationService {
 
     public ReservationDto doCheckin(Long id, Long userId) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (reservation.getStatut() != StatutReservation.CONFIRMEE) {
-            throw new RuntimeException("Seules les réservations confirmées peuvent faire l'objet d'un check-in");
+            throw new BusinessException("Seules les réservations confirmées peuvent faire l'objet d'un check-in");
         }
 
         reservation.setStatut(StatutReservation.EN_COURS);
@@ -369,10 +371,10 @@ public class ReservationService {
 
     public ReservationDto doCheckout(Long id, Long userId) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (reservation.getStatut() != StatutReservation.EN_COURS) {
-            throw new RuntimeException("Seules les réservations en cours peuvent faire l'objet d'un check-out");
+            throw new BusinessException("Seules les réservations en cours peuvent faire l'objet d'un check-out");
         }
 
         reservation.setStatut(StatutReservation.TERMINEE);
@@ -388,13 +390,13 @@ public class ReservationService {
 
     public void cancelReservation(Long id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (reservation.getStatut() == StatutReservation.TERMINEE) {
-            throw new RuntimeException("Impossible d'annuler une réservation terminée");
+            throw new BusinessException("Impossible d'annuler une réservation terminée");
         }
         if (reservation.getStatut() == StatutReservation.EN_COURS) {
-            throw new RuntimeException("Impossible d'annuler une réservation en cours. Effectuez d'abord un check-out.");
+            throw new BusinessException("Impossible d'annuler une réservation en cours. Effectuez d'abord un check-out.");
         }
 
         reservation.setStatut(StatutReservation.ANNULEE);
@@ -406,17 +408,17 @@ public class ReservationService {
 
     public ReservationDto addPaiement(Long id, BigDecimal montant, String modePaiement) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (montant.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Le montant doit être supérieur à 0");
+            throw new BusinessException("Le montant doit être supérieur à 0");
         }
 
         BigDecimal nouveauMontantPaye = reservation.getMontantPaye().add(montant);
         BigDecimal nouveauMontantRestant = reservation.getMontantTotal().subtract(nouveauMontantPaye);
 
         if (nouveauMontantRestant.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Le montant payé dépasse le montant total");
+            throw new BusinessException("Le montant payé dépasse le montant total");
         }
 
         reservation.setMontantPaye(nouveauMontantPaye);

@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.ProduitDto;
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.enums.TypeMouvement;
@@ -38,7 +40,7 @@ public class ProduitController {
             ProduitDto produit = produitService.createProduit(principal.getHotelId(), dto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Produit créé avec succès", produit));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -50,7 +52,7 @@ public class ProduitController {
         try {
             List<ProduitDto> produits = produitService.getProduitsByHotel(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(produits));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -62,7 +64,7 @@ public class ProduitController {
         try {
             List<ProduitDto> produits = produitService.getProduitsEnRupture(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(produits));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -79,7 +81,7 @@ public class ProduitController {
             Long userId = "USER".equals(principal.getAccountType()) ? principal.getId() : null;
             produitService.ajusterStock(id, quantite, type, motif, userId);
             return ResponseEntity.ok(ApiResponse.success("Stock ajusté avec succès", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -99,7 +101,7 @@ public class ProduitController {
         try {
             List<ProduitDto> produits = produitService.getMenuComplet(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(produits));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -115,7 +117,7 @@ public class ProduitController {
         try {
             List<ProduitDto> produits = produitService.getMenuParType(principal.getHotelId(), type);
             return ResponseEntity.ok(ApiResponse.success(produits));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -126,7 +128,7 @@ public class ProduitController {
         try {
             ProduitDto produit = produitService.getProduitById(id);
             return ResponseEntity.ok(ApiResponse.success(produit));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -138,7 +140,7 @@ public class ProduitController {
         try {
             produitService.deleteProduit(id);
             return ResponseEntity.ok(ApiResponse.success("Produit supprimé avec succès", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

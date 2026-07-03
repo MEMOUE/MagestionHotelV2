@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.StatistiquesFinanceDto;
 import com.mghbackend.dto.TransactionDto;
 import com.mghbackend.dto.reponse.ApiResponse;
@@ -37,7 +39,7 @@ public class TransactionController {
                     principal.getHotelId(), dto, userId);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Transaction créée avec succès", transaction));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -52,7 +54,7 @@ public class TransactionController {
             List<TransactionDto> transactions = transactionService
                     .getTransactionsByHotel(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(transactions));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -63,7 +65,7 @@ public class TransactionController {
         try {
             TransactionDto transaction = transactionService.getTransactionById(id);
             return ResponseEntity.ok(ApiResponse.success(transaction));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -77,7 +79,7 @@ public class TransactionController {
             List<TransactionDto> transactions = transactionService
                     .getTransactionsByHotelAndType(principal.getHotelId(), type);
             return ResponseEntity.ok(ApiResponse.success(transactions));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -90,7 +92,7 @@ public class TransactionController {
             List<TransactionDto> transactions = transactionService
                     .getTransactionsEnAttente(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(transactions));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -104,7 +106,7 @@ public class TransactionController {
             List<TransactionDto> transactions = transactionService
                     .searchTransactions(principal.getHotelId(), keyword);
             return ResponseEntity.ok(ApiResponse.success(transactions));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -119,7 +121,7 @@ public class TransactionController {
         try {
             TransactionDto transaction = transactionService.updateTransaction(id, dto);
             return ResponseEntity.ok(ApiResponse.success("Transaction mise à jour", transaction));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -135,7 +137,7 @@ public class TransactionController {
             String validePar = principal.getEmail();
             TransactionDto transaction = transactionService.validerTransaction(id, validePar);
             return ResponseEntity.ok(ApiResponse.success("Transaction validée avec succès", transaction));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -148,7 +150,7 @@ public class TransactionController {
         try {
             TransactionDto transaction = transactionService.annulerTransaction(id, motif);
             return ResponseEntity.ok(ApiResponse.success("Transaction annulée", transaction));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -161,7 +163,7 @@ public class TransactionController {
         try {
             transactionService.deleteTransaction(id);
             return ResponseEntity.ok(ApiResponse.success("Transaction supprimée", null));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -176,7 +178,7 @@ public class TransactionController {
             StatistiquesFinanceDto stats = transactionService
                     .getStatistiques(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(stats));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -204,7 +206,7 @@ public class TransactionController {
                     .header("Content-Disposition",
                             "attachment; filename=\"transactions" + extension + "\"")
                     .body(data);
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().build();
         }
     }

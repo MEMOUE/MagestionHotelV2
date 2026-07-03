@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,10 +52,10 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.error("❌ Erreur envoi email de réinitialisation à {} : {}", toEmail, e.getMessage());
-            throw new RuntimeException("Impossible d'envoyer l'email de réinitialisation");
+            throw new BusinessException("Impossible d'envoyer l'email de réinitialisation");
         } catch (Exception e) {
             log.error("❌ Erreur inattendue envoi email à {} : {}", toEmail, e.getMessage());
-            throw new RuntimeException("Erreur lors de l'envoi de l'email");
+            throw new BusinessException("Erreur lors de l'envoi de l'email");
         }
     }
 

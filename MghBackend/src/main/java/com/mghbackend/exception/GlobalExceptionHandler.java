@@ -2,6 +2,7 @@ package com.mghbackend.exception;
 
 import com.mghbackend.dto.reponse.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,11 +19,25 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-	@ExceptionHandler(RuntimeException.class)
-	public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException e) {
-		log.error("Erreur runtime: ", e);
+	@ExceptionHandler(BusinessException.class)
+	public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
+		log.warn("Erreur métier: {}", e.getMessage());
 		return ResponseEntity.badRequest()
 				.body(ApiResponse.error(e.getMessage()));
+	}
+
+	@ExceptionHandler(DataAccessException.class)
+	public ResponseEntity<ApiResponse<Void>> handleDataAccessException(DataAccessException e) {
+		log.error("Erreur d'accès aux données: ", e);
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(ApiResponse.error("Le service est momentanément indisponible. Veuillez réessayer plus tard."));
+	}
+
+	@ExceptionHandler(RuntimeException.class)
+	public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException e) {
+		log.error("Erreur runtime inattendue: ", e);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponse.error("Une erreur inattendue s'est produite"));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.FactureDto;
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.security.CustomUserPrincipal;
@@ -32,7 +34,7 @@ public class FactureController {
             FactureDto facture = factureService.createFacture(principal.getHotelId(), dto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Facture créée avec succès", facture));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -45,7 +47,7 @@ public class FactureController {
         try {
             List<FactureDto> factures = factureService.getFacturesByHotel(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(factures));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -57,7 +59,7 @@ public class FactureController {
         try {
             FactureDto facture = factureService.emettre(id);
             return ResponseEntity.ok(ApiResponse.success("Facture émise", facture));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -71,7 +73,7 @@ public class FactureController {
         try {
             FactureDto facture = factureService.addPaiement(id, montant);
             return ResponseEntity.ok(ApiResponse.success("Paiement enregistré", facture));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -95,7 +97,7 @@ public class FactureController {
                     principal.getHotelId(), reservationId, tauxTVA);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Facture consolidée générée avec succès", facture));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }

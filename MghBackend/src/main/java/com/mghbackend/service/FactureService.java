@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.FactureDto;
 import com.mghbackend.dto.LigneFactureDto;
 import com.mghbackend.entity.*;
@@ -31,7 +33,7 @@ public class FactureService {
 
     public FactureDto createFacture(Long hotelId, FactureDto dto) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         Facture facture = new Facture();
         facture.setHotel(hotel);
@@ -43,19 +45,19 @@ public class FactureService {
         // Lier à client, réservation ou commande restaurant
         if (dto.getClientId() != null) {
             Client client = clientRepository.findById(dto.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+                    .orElseThrow(() -> new BusinessException("Client non trouvé"));
             facture.setClient(client);
         }
 
         if (dto.getReservationId() != null) {
             Reservation reservation = reservationRepository.findById(dto.getReservationId())
-                    .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                    .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
             facture.setReservation(reservation);
         }
 
         if (dto.getCommandeRestaurantId() != null) {
             CommandeRestaurant commande = commandeRestaurantRepository.findById(dto.getCommandeRestaurantId())
-                    .orElseThrow(() -> new RuntimeException("Commande restaurant non trouvée"));
+                    .orElseThrow(() -> new BusinessException("Commande restaurant non trouvée"));
             facture.setCommandeRestaurant(commande);
         }
 
@@ -97,7 +99,7 @@ public class FactureService {
     @Transactional(readOnly = true)
     public List<FactureDto> getFacturesByHotel(Long hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
         return factureRepository.findByHotel(hotel).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -105,7 +107,7 @@ public class FactureService {
 
     public FactureDto emettre(Long factureId) {
         Facture facture = factureRepository.findById(factureId)
-                .orElseThrow(() -> new RuntimeException("Facture non trouvée"));
+                .orElseThrow(() -> new BusinessException("Facture non trouvée"));
         facture.setStatut(StatutFacture.EMISE);
         Facture saved = factureRepository.save(facture);
         return convertToDto(saved);
@@ -113,7 +115,7 @@ public class FactureService {
 
     public FactureDto addPaiement(Long factureId, BigDecimal montant) {
         Facture facture = factureRepository.findById(factureId)
-                .orElseThrow(() -> new RuntimeException("Facture non trouvée"));
+                .orElseThrow(() -> new BusinessException("Facture non trouvée"));
 
         BigDecimal nouveauMontantPaye = facture.getMontantPaye().add(montant);
         facture.setMontantPaye(nouveauMontantPaye);
@@ -196,19 +198,19 @@ public class FactureService {
      */
     public FactureDto genererFactureReservation(Long hotelId, Long reservationId, BigDecimal tauxTVA) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+                .orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+                .orElseThrow(() -> new BusinessException("Réservation non trouvée"));
 
         if (!reservation.getHotel().getId().equals(hotelId)) {
-            throw new RuntimeException("Cette réservation n'appartient pas à cet hôtel");
+            throw new BusinessException("Cette réservation n'appartient pas à cet hôtel");
         }
 
         // Vérifier qu'il n'y a pas déjà une facture pour cette réservation
         List<Facture> facturesExistantes = factureRepository.findByReservation(reservation);
         if (!facturesExistantes.isEmpty()) {
-            throw new RuntimeException("Une facture existe déjà pour cette réservation : "
+            throw new BusinessException("Une facture existe déjà pour cette réservation : "
                     + facturesExistantes.get(0).getNumeroFacture());
         }
 

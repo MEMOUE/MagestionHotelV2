@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.CommandeRestaurantDto;
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.enums.StatutCommandeRestaurant;
@@ -35,7 +37,7 @@ public class CommandeRestaurantController {
                     principal.getHotelId(), dto, userId);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Commande créée avec succès", commande));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -49,7 +51,7 @@ public class CommandeRestaurantController {
             List<CommandeRestaurantDto> commandes = commandeService.getCommandesByHotel(
                     principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(commandes));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -62,7 +64,7 @@ public class CommandeRestaurantController {
         try {
             CommandeRestaurantDto commande = commandeService.getCommandeById(id);
             return ResponseEntity.ok(ApiResponse.success(commande));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -76,7 +78,7 @@ public class CommandeRestaurantController {
         try {
             CommandeRestaurantDto commande = commandeService.updateStatut(id, statut);
             return ResponseEntity.ok(ApiResponse.success("Statut mis à jour", commande));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -90,7 +92,7 @@ public class CommandeRestaurantController {
         try {
             CommandeRestaurantDto commande = commandeService.addPaiement(id, montant);
             return ResponseEntity.ok(ApiResponse.success("Paiement enregistré", commande));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -106,7 +108,7 @@ public class CommandeRestaurantController {
         try {
             CommandeRestaurantDto commande = commandeService.appliquerRemise(id, montant);
             return ResponseEntity.ok(ApiResponse.success("Remise appliquée avec succès", commande));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
@@ -119,7 +121,7 @@ public class CommandeRestaurantController {
         try {
             List<CommandeRestaurantDto> commandes = commandeService.getCommandesByReservation(reservationId);
             return ResponseEntity.ok(ApiResponse.success(commandes));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

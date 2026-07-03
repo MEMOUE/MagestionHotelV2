@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.MouvementStockDto;
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.security.CustomUserPrincipal;
@@ -32,7 +34,7 @@ public class MouvementStockController {
             List<MouvementStockDto> mouvements =
                     produitService.getHistoriqueByHotel(principal.getHotelId());
             return ResponseEntity.ok(ApiResponse.success(mouvements));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -49,7 +51,7 @@ public class MouvementStockController {
             List<MouvementStockDto> mouvements =
                     produitService.getHistoriqueByProduit(produitId);
             return ResponseEntity.ok(ApiResponse.success(mouvements));
-        } catch (RuntimeException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

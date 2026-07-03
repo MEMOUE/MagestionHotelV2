@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.*;
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.dto.request.CreateUserRequest;
@@ -34,7 +36,7 @@ public class UserController {
 			UserDto user = userService.createUser(principal.getHotelId(), request);
 			return ResponseEntity.status(HttpStatus.CREATED)
 					.body(ApiResponse.success("Employé créé avec succès", user));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -47,7 +49,7 @@ public class UserController {
 		try {
 			UserDto user = userService.getUserById(principal.getId());
 			return ResponseEntity.ok(ApiResponse.success(user));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -59,7 +61,7 @@ public class UserController {
 		try {
 			UserDto user = userService.getUserById(id);
 			return ResponseEntity.ok(ApiResponse.success(user));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -75,7 +77,7 @@ public class UserController {
 					? userService.getUsersByHotel(principal.getHotelId())
 					: userService.getActiveUsersByHotel(principal.getHotelId());
 			return ResponseEntity.ok(ApiResponse.success(users));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -89,7 +91,7 @@ public class UserController {
 		try {
 			List<UserDto> users = userService.searchUsers(principal.getHotelId(), keyword);
 			return ResponseEntity.ok(ApiResponse.success(users));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -103,7 +105,7 @@ public class UserController {
 		try {
 			UserDto user = userService.updateUser(id, userDto);
 			return ResponseEntity.ok(ApiResponse.success("Employé mis à jour avec succès", user));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -117,7 +119,7 @@ public class UserController {
 		try {
 			userService.updateUserRoles(id, roleNames);
 			return ResponseEntity.ok(ApiResponse.success("Rôles mis à jour avec succès", null));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -131,7 +133,7 @@ public class UserController {
 		try {
 			userService.changePassword(id, request);
 			return ResponseEntity.ok(ApiResponse.success("Mot de passe modifié avec succès", null));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -143,7 +145,7 @@ public class UserController {
 		try {
 			userService.toggleActiveStatus(id);
 			return ResponseEntity.ok(ApiResponse.success("Statut modifié avec succès", null));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}

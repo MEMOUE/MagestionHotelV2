@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.*;
 import com.mghbackend.dto.request.CreateUserRequest;
 import com.mghbackend.dto.request.UpdatePasswordRequest;
@@ -27,14 +29,14 @@ public class UserService {
 
 	public UserDto createUser(Long hotelId, CreateUserRequest request) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
 		if (userRepository.existsByEmail(request.getEmail())) {
-			throw new RuntimeException("Un utilisateur avec cet email existe déjà");
+			throw new BusinessException("Un utilisateur avec cet email existe déjà");
 		}
 
 		if (userRepository.existsByUsername(request.getUsername())) {
-			throw new RuntimeException("Un utilisateur avec ce nom d'utilisateur existe déjà");
+			throw new BusinessException("Un utilisateur avec ce nom d'utilisateur existe déjà");
 		}
 
 		User user = new User();
@@ -50,7 +52,7 @@ public class UserService {
 		// Assigner les rôles
 		Set<Role> roles = roleRepository.findByNameIn(request.getRoleNames());
 		if (roles.size() != request.getRoleNames().size()) {
-			throw new RuntimeException("Un ou plusieurs rôles sont invalides");
+			throw new BusinessException("Un ou plusieurs rôles sont invalides");
 		}
 		user.setRoles(roles);
 
@@ -61,28 +63,28 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public UserDto getUserById(Long id) {
 		User user = userRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 		return convertToDto(user);
 	}
 
 	@Transactional(readOnly = true)
 	public UserDto getUserByEmail(String email) {
 		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 		return convertToDto(user);
 	}
 
 	@Transactional(readOnly = true)
 	public UserDto getUserByUsername(String username) {
 		User user = userRepository.findByUsername(username)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 		return convertToDto(user);
 	}
 
 	@Transactional(readOnly = true)
 	public List<UserDto> getUsersByHotel(Long hotelId) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 		return userRepository.findByHotel(hotel).stream()
 				.map(this::convertToDto)
 				.collect(Collectors.toList());
@@ -91,7 +93,7 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public List<UserDto> getActiveUsersByHotel(Long hotelId) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 		return userRepository.findByHotelAndActiveTrue(hotel).stream()
 				.map(this::convertToDto)
 				.collect(Collectors.toList());
@@ -100,7 +102,7 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public List<UserDto> searchUsers(Long hotelId, String keyword) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 		return userRepository.searchByHotelAndKeyword(hotel, keyword).stream()
 				.map(this::convertToDto)
 				.collect(Collectors.toList());
@@ -108,18 +110,18 @@ public class UserService {
 
 	public UserDto updateUser(Long id, UserDto userDto) {
 		User user = userRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 
 		// Vérifier l'unicité de l'email si changé
 		if (!user.getEmail().equals(userDto.getEmail()) &&
 				userRepository.existsByEmail(userDto.getEmail())) {
-			throw new RuntimeException("Un utilisateur avec cet email existe déjà");
+			throw new BusinessException("Un utilisateur avec cet email existe déjà");
 		}
 
 		// Vérifier l'unicité du username si changé
 		if (!user.getUsername().equals(userDto.getUsername()) &&
 				userRepository.existsByUsername(userDto.getUsername())) {
-			throw new RuntimeException("Un utilisateur avec ce nom d'utilisateur existe déjà");
+			throw new BusinessException("Un utilisateur avec ce nom d'utilisateur existe déjà");
 		}
 
 		user.setUsername(userDto.getUsername());
@@ -134,11 +136,11 @@ public class UserService {
 
 	public void updateUserRoles(Long userId, Set<String> roleNames) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 
 		Set<Role> roles = roleRepository.findByNameIn(roleNames);
 		if (roles.size() != roleNames.size()) {
-			throw new RuntimeException("Un ou plusieurs rôles sont invalides");
+			throw new BusinessException("Un ou plusieurs rôles sont invalides");
 		}
 
 		user.setRoles(roles);
@@ -147,10 +149,10 @@ public class UserService {
 
 	public void changePassword(Long userId, UpdatePasswordRequest request) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 
 		if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-			throw new RuntimeException("Ancien mot de passe incorrect");
+			throw new BusinessException("Ancien mot de passe incorrect");
 		}
 
 		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -159,7 +161,7 @@ public class UserService {
 
 	public void toggleActiveStatus(Long userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 		user.setActive(!user.getActive());
 		userRepository.save(user);
 	}
@@ -167,7 +169,7 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public Set<TypePermission> getUserPermissions(Long userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+				.orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 
 		return user.getRoles().stream()
 				.flatMap(role -> role.getPermissions().stream())

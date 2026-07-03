@@ -1,5 +1,7 @@
 package com.mghbackend.service;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.*;
 import com.mghbackend.dto.request.CreateHotelRequest;
 import com.mghbackend.dto.request.UpdatePasswordRequest;
@@ -25,12 +27,12 @@ public class HotelService {
 	public HotelDto createHotel(CreateHotelRequest request) {
 		// Vérifier si l'email existe déjà
 		if (hotelRepository.existsByEmail(request.getEmail())) {
-			throw new RuntimeException("Un hôtel avec cet email existe déjà");
+			throw new BusinessException("Un hôtel avec cet email existe déjà");
 		}
 
 		// Vérifier si le nom existe déjà
 		if (hotelRepository.existsByName(request.getName())) {
-			throw new RuntimeException("Un hôtel avec ce nom existe déjà");
+			throw new BusinessException("Un hôtel avec ce nom existe déjà");
 		}
 
 		Hotel hotel = new Hotel();
@@ -50,14 +52,14 @@ public class HotelService {
 	@Transactional(readOnly = true)
 	public HotelDto getHotelById(Long id) {
 		Hotel hotel = hotelRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 		return convertToDto(hotel);
 	}
 
 	@Transactional(readOnly = true)
 	public HotelDto getHotelByEmail(String email) {
 		Hotel hotel = hotelRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 		return convertToDto(hotel);
 	}
 
@@ -84,18 +86,18 @@ public class HotelService {
 
 	public HotelDto updateHotel(Long id, HotelDto hotelDto) {
 		Hotel hotel = hotelRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
 		// Vérifier l'unicité de l'email si changé
 		if (!hotel.getEmail().equals(hotelDto.getEmail()) &&
 				hotelRepository.existsByEmail(hotelDto.getEmail())) {
-			throw new RuntimeException("Un hôtel avec cet email existe déjà");
+			throw new BusinessException("Un hôtel avec cet email existe déjà");
 		}
 
 		// Vérifier l'unicité du nom si changé
 		if (!hotel.getName().equals(hotelDto.getName()) &&
 				hotelRepository.existsByName(hotelDto.getName())) {
-			throw new RuntimeException("Un hôtel avec ce nom existe déjà");
+			throw new BusinessException("Un hôtel avec ce nom existe déjà");
 		}
 
 		hotel.setName(hotelDto.getName());
@@ -111,10 +113,10 @@ public class HotelService {
 
 	public void changePassword(Long hotelId, UpdatePasswordRequest request) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
 		if (!passwordEncoder.matches(request.getOldPassword(), hotel.getPassword())) {
-			throw new RuntimeException("Ancien mot de passe incorrect");
+			throw new BusinessException("Ancien mot de passe incorrect");
 		}
 
 		hotel.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -123,14 +125,14 @@ public class HotelService {
 
 	public void toggleActiveStatus(Long hotelId) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 		hotel.setActive(!hotel.getActive());
 		hotelRepository.save(hotel);
 	}
 
 	public void extendSubscription(Long hotelId, int months) {
 		Hotel hotel = hotelRepository.findById(hotelId)
-				.orElseThrow(() -> new RuntimeException("Hôtel non trouvé"));
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
 
 		LocalDateTime currentEnd = hotel.getSubscriptionEnd();
 		LocalDateTime newEnd = (currentEnd != null && currentEnd.isAfter(LocalDateTime.now()))

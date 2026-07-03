@@ -1,5 +1,7 @@
 package com.mghbackend.controller;
 
+import com.mghbackend.exception.BusinessException;
+
 import com.mghbackend.dto.*;
 import com.mghbackend.dto.reponse.ApiResponse;
 import com.mghbackend.dto.request.CreateHotelRequest;
@@ -30,7 +32,7 @@ public class HotelController {
 			HotelDto hotel = hotelService.createHotel(request);
 			return ResponseEntity.status(HttpStatus.CREATED)
 					.body(ApiResponse.success("Hôtel créé avec succès", hotel));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -42,7 +44,7 @@ public class HotelController {
 		try {
 			HotelDto hotel = hotelService.getHotelById(principal.getId());
 			return ResponseEntity.ok(ApiResponse.success(hotel));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -54,7 +56,7 @@ public class HotelController {
 		try {
 			HotelDto hotel = hotelService.getHotelById(id);
 			return ResponseEntity.ok(ApiResponse.success(hotel));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -68,7 +70,7 @@ public class HotelController {
 		try {
 			HotelDto hotel = hotelService.updateHotel(id, hotelDto);
 			return ResponseEntity.ok(ApiResponse.success("Hôtel mis à jour avec succès", hotel));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -82,7 +84,7 @@ public class HotelController {
 		try {
 			hotelService.changePassword(id, request);
 			return ResponseEntity.ok(ApiResponse.success("Mot de passe modifié avec succès", null));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -94,7 +96,7 @@ public class HotelController {
 		try {
 			hotelService.toggleActiveStatus(id);
 			return ResponseEntity.ok(ApiResponse.success("Statut modifié avec succès", null));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -108,7 +110,7 @@ public class HotelController {
 		try {
 			hotelService.extendSubscription(id, months);
 			return ResponseEntity.ok(ApiResponse.success("Abonnement prolongé avec succès", null));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -120,7 +122,7 @@ public class HotelController {
 		try {
 			List<HotelDto> hotels = hotelService.getAllHotels();
 			return ResponseEntity.ok(ApiResponse.success(hotels));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
@@ -132,7 +134,7 @@ public class HotelController {
 		try {
 			List<HotelDto> hotels = hotelService.searchHotels(keyword);
 			return ResponseEntity.ok(ApiResponse.success(hotels));
-		} catch (RuntimeException e) {
+		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));
 		}
