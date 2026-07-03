@@ -25,6 +25,33 @@ services:
       start_period: 30s
 
   # ==========================================
+  # SAUVEGARDE AUTOMATIQUE DE LA BASE
+  # Écrit des dumps compressés dans ./backups (sur l'HÔTE, hors volume Docker)
+  # => survit à la suppression du volume mysql_data / au crash du conteneur
+  # ==========================================
+  db-backup:
+    image: mysql:8.0
+    container_name: mgh-db-backup
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_HOUR: ${BACKUP_HOUR:-03}
+      TZ: ${TZ:-Africa/Abidjan}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup-loop.sh:/usr/local/bin/backup-loop.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/backup-loop.sh"]
+    networks:
+      - mgh-network
+
+  # ==========================================
   # BACKEND SPRING BOOT
   # ==========================================
   backend:
