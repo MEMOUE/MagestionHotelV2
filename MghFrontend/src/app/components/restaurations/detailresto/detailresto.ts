@@ -239,16 +239,12 @@ tbody tr td{padding:5px 2px;vertical-align:top}
     if (!this.commande) return 0;
     return this.commande.montantTotal - (this.commande.montantPaye || 0);
   }
-  canPasserEnPreparation(): boolean { return this.commande?.statut === StatutCommandeRestaurant.EN_ATTENTE;     }
-  canMarquerPrete():        boolean { return this.commande?.statut === StatutCommandeRestaurant.EN_PREPARATION; }
-  canMarquerServie():       boolean { return this.commande?.statut === StatutCommandeRestaurant.PRETE;          }
-  canMarquerPayee():        boolean { return this.commande?.statut === StatutCommandeRestaurant.SERVIE;         }
-  canAjouterPaiement():     boolean {
+  canMarquerServie():    boolean { return this.commande?.statut === StatutCommandeRestaurant.EN_ATTENTE; }
+  canMarquerPayee():     boolean { return this.commande?.statut === StatutCommandeRestaurant.SERVIE;     }
+  canAjouterPaiement():  boolean {
     if (!this.commande) return false;
     return this.getMontantRestant() > 0 && this.commande.statut !== StatutCommandeRestaurant.ANNULEE;
   }
-  passerEnPreparation(): void { this.changerStatut(StatutCommandeRestaurant.EN_PREPARATION); }
-  marquerPrete():        void { this.changerStatut(StatutCommandeRestaurant.PRETE);          }
-  marquerServie():       void { this.changerStatut(StatutCommandeRestaurant.SERVIE);         }
-  marquerPayee():        void { this.changerStatut(StatutCommandeRestaurant.PAYEE);          }
+  marquerServie(): void { this.changerStatut(StatutCommandeRestaurant.SERVIE); }
+  marquerPayee():  void { this.changerStatut(StatutCommandeRestaurant.PAYEE);  }
 }

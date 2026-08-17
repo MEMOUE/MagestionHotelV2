@@ -41,12 +41,6 @@
 
   <!-- Actions rapides -->
   <div class="quick-actions" *ngIf="commande.statut !== 'PAYEE' && commande.statut !== 'ANNULEE'">
-    <button pButton label="En Préparation" icon="pi pi-cog" class="p-button-info"
-            *ngIf="canPasserEnPreparation()" (click)="passerEnPreparation()">
-    </button>
-    <button pButton label="Prête" icon="pi pi-check-circle" class="p-button-success"
-            *ngIf="canMarquerPrete()" (click)="marquerPrete()">
-    </button>
     <button pButton label="Servie" icon="pi pi-send" class="p-button-primary"
             *ngIf="canMarquerServie()" (click)="marquerServie()">
     </button>

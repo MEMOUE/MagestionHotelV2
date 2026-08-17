@@ -1,0 +1,29 @@
+.admin-hotels-container {
+  padding: 1.5rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  min-width: 280px;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-state p {
+  color: var(--text-color-secondary);
+  margin-top: 0.5rem;
+}
+
+.text-muted {
+  color: var(--text-color-secondary);
+  font-style: italic;
+}

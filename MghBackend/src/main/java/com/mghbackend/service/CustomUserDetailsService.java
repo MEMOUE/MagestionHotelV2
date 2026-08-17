@@ -3,6 +3,7 @@ package com.mghbackend.service;
 import com.mghbackend.entity.*;
 import com.mghbackend.enums.TypePermission;
 import com.mghbackend.repository.HotelRepository;
+import com.mghbackend.repository.SystemAdminRepository;
 import com.mghbackend.repository.UserRepository;
 import com.mghbackend.security.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 	private final HotelRepository hotelRepository;
 	private final UserRepository userRepository;
+	private final SystemAdminRepository systemAdminRepository;
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -38,9 +40,28 @@ public class CustomUserDetailsService implements UserDetailsService {
 			return loadHotelByEmail(email);
 		} else if ("USER".equals(accountType)) {
 			return loadUserByEmail(email);
+		} else if ("ADMIN".equals(accountType)) {
+			return loadAdminByEmail(email);
 		} else {
 			throw new UsernameNotFoundException("Type de compte inconnu: " + accountType);
 		}
+	}
+
+	private UserDetails loadAdminByEmail(String email) {
+		SystemAdmin admin = systemAdminRepository.findByEmailAndActiveTrue(email)
+				.orElseThrow(() -> new UsernameNotFoundException("Administrateur non trouvé: " + email));
+
+		Set<GrantedAuthority> authorities = new HashSet<>();
+		authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+		return new CustomUserPrincipal(
+				admin.getId(),
+				admin.getEmail(),
+				admin.getPassword(),
+				"ADMIN",
+				null,
+				authorities
+		);
 	}
 
 	private UserDetails loadHotelByEmail(String email) {

@@ -44,6 +44,12 @@ export class Listeclient implements OnInit {
   searchKeyword: string = '';
   showFidelesOnly: boolean = false;
 
+  // Seuil à partir duquel un client est considéré "fidèle" (au moins 3 visites)
+  readonly SEUIL_FIDELE = 3;
+
+  // Ids des clients fidèles (calculés côté backend via le nombre de réservations)
+  fideleClientIds = new Set<number>();
+
   // Statistiques
   stats = {
     total: 0,
@@ -59,7 +65,23 @@ export class Listeclient implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadFideleClientIds();
     this.loadClients();
+  }
+
+  loadFideleClientIds(): void {
+    this.clientService.getClientsFideles(this.SEUIL_FIDELE).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.fideleClientIds = new Set(response.data.map(c => c.id!));
+          this.calculateStats();
+        }
+      }
+    });
+  }
+
+  isFidele(client: Client): boolean {
+    return client.id != null && this.fideleClientIds.has(client.id);
   }
 
   loadClients(): void {
@@ -137,10 +159,9 @@ export class Listeclient implements OnInit {
   calculateStats(): void {
     this.stats.total = this.clients.length;
     this.stats.avecEmail = this.clients.filter(c => c.email && c.email.trim() !== '').length;
-    this.stats.fideles = this.clients.filter(c => {
-      // Cette logique peut être améliorée si le backend renvoie le nombre de réservations
-      return true; // Temporaire
-    }).length;
+    this.stats.fideles = this.showFidelesOnly
+      ? this.clients.length
+      : this.clients.filter(c => this.isFidele(c)).length;
   }
 
   onSearch(): void {

@@ -2,7 +2,7 @@
   <div class="max-w-md w-full space-y-8">
     <!-- Logo et Titre -->
     <div class="text-center">
-      <div class="mx-auto h-16 w-16 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+      <div class="mx-auto h-16 w-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
         <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Formulaire de connexion -->
-    <div class="bg-white rounded-2xl shadow-xl p-8">
+    <div class="bg-white rounded-2xl shadow-xl shadow-indigo-900/5 ring-1 ring-black/5 p-8">
       <!-- Message de succès après inscription -->
       @if (registrationSuccess) {
         <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
@@ -62,6 +62,7 @@
             <button type="button" (click)="setAccountType('HOTEL')"
                     [class.bg-indigo-600]="selectedAccountType === 'HOTEL'"
                     [class.text-white]="selectedAccountType === 'HOTEL'"
+                    [class.shadow-md]="selectedAccountType === 'HOTEL'"
                     [class.bg-white]="selectedAccountType !== 'HOTEL'"
                     [class.text-gray-700]="selectedAccountType !== 'HOTEL'"
                     class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
@@ -73,6 +74,7 @@
             <button type="button" (click)="setAccountType('USER')"
                     [class.bg-indigo-600]="selectedAccountType === 'USER'"
                     [class.text-white]="selectedAccountType === 'USER'"
+                    [class.shadow-md]="selectedAccountType === 'USER'"
                     [class.bg-white]="selectedAccountType !== 'USER'"
                     [class.text-gray-700]="selectedAccountType !== 'USER'"
                     class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
@@ -87,10 +89,17 @@
         <!-- Email -->
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input id="email" type="email" formControlName="email"
-                 class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
-                 [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-                 placeholder="votre@email.com" autocomplete="email" />
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            </span>
+            <input id="email" type="email" formControlName="email"
+                   class="appearance-none block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+                   [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                   placeholder="votre@email.com" autocomplete="email" />
+          </div>
           @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
             <p class="mt-1 text-sm text-red-600">Email invalide</p>
           }
@@ -100,8 +109,13 @@
         <div>
           <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
           <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
             <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
-                   class="appearance-none block w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+                   class="appearance-none block w-full pl-11 pr-10 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
                    [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                    placeholder="••••••••" autocomplete="current-password" />
             <button type="button" (click)="togglePasswordVisibility()"
@@ -141,7 +155,7 @@
         <!-- Bouton de connexion -->
         <div>
           <button type="submit" [disabled]="loginForm.invalid || loading"
-                  class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150">
+                  class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-md shadow-indigo-500/30 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150">
             @if (loading) {
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

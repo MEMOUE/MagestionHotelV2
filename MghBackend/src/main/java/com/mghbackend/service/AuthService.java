@@ -7,6 +7,7 @@ import com.mghbackend.dto.reponse.LoginResponse;
 import com.mghbackend.entity.*;
 import com.mghbackend.enums.TypePermission;
 import com.mghbackend.repository.HotelRepository;
+import com.mghbackend.repository.SystemAdminRepository;
 import com.mghbackend.repository.UserRepository;
 import com.mghbackend.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class AuthService {
 
 	private final HotelRepository hotelRepository;
 	private final UserRepository userRepository;
+	private final SystemAdminRepository systemAdminRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtUtil jwtUtil;
 
@@ -32,9 +34,32 @@ public class AuthService {
 			return authenticateHotel(request);
 		} else if ("USER".equals(request.getAccountType())) {
 			return authenticateUser(request);
+		} else if ("ADMIN".equals(request.getAccountType())) {
+			return authenticateAdmin(request);
 		} else {
 			throw new BusinessException("Type de compte invalide");
 		}
+	}
+
+	private LoginResponse authenticateAdmin(LoginRequest request) {
+		SystemAdmin admin = systemAdminRepository.findByEmailAndActiveTrue(request.getEmail())
+				.orElseThrow(() -> new BusinessException("Email ou mot de passe incorrect"));
+
+		if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
+			throw new BusinessException("Email ou mot de passe incorrect");
+		}
+
+		String token = jwtUtil.generateToken(admin.getEmail(), "ADMIN", admin.getId());
+
+		LoginResponse response = new LoginResponse();
+		response.setToken(token);
+		response.setType("Bearer");
+		response.setId(admin.getId());
+		response.setEmail(admin.getEmail());
+		response.setName(admin.getName());
+		response.setAccountType("ADMIN");
+
+		return response;
 	}
 
 	private LoginResponse authenticateHotel(LoginRequest request) {

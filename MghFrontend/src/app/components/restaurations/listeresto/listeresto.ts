@@ -55,7 +55,7 @@ export class Listeresto implements OnInit {
 
   totalCommandes     = 0;
   commandesEnAttente = 0;
-  commandesEnCours   = 0;
+  commandesServies   = 0;
   chiffreAffaires    = 0;
 
   hotelProfile: HotelProfile | null = null;
@@ -70,8 +70,6 @@ export class Listeresto implements OnInit {
   statutOptions = [
     { label: 'Tous les statuts',  value: '' },
     { label: 'En attente',        value: StatutCommandeRestaurant.EN_ATTENTE },
-    { label: 'En préparation',    value: StatutCommandeRestaurant.EN_PREPARATION },
-    { label: 'Prête',             value: StatutCommandeRestaurant.PRETE },
     { label: 'Servie',            value: StatutCommandeRestaurant.SERVIE },
     { label: 'Payée',             value: StatutCommandeRestaurant.PAYEE },
     { label: 'Annulée',           value: StatutCommandeRestaurant.ANNULEE }
@@ -148,7 +146,7 @@ export class Listeresto implements OnInit {
     const f = this.commandesFiltrees;
     this.totalCommandes     = f.length;
     this.commandesEnAttente = f.filter(c => c.statut === StatutCommandeRestaurant.EN_ATTENTE).length;
-    this.commandesEnCours   = f.filter(c => c.statut === StatutCommandeRestaurant.EN_PREPARATION).length;
+    this.commandesServies   = f.filter(c => c.statut === StatutCommandeRestaurant.SERVIE).length;
     this.chiffreAffaires    = f
       .filter(c => c.statut !== StatutCommandeRestaurant.ANNULEE)
       .reduce((sum, c) => sum + c.montantTotal, 0);
@@ -363,7 +361,7 @@ tbody tr td{padding:5px 2px;vertical-align:top}
     return c.montantTotal - (c.montantPaye || 0);
   }
 
-  canMarquerServie(c: CommandeRestaurant):   boolean { return c.statut === StatutCommandeRestaurant.PRETE;  }
+  canMarquerServie(c: CommandeRestaurant):   boolean { return c.statut === StatutCommandeRestaurant.EN_ATTENTE; }
   canMarquerPayee(c: CommandeRestaurant):    boolean { return c.statut === StatutCommandeRestaurant.SERVIE; }
   canAjouterPaiement(c: CommandeRestaurant): boolean {
     return this.getMontantRestant(c) > 0 && c.statut !== StatutCommandeRestaurant.ANNULEE;

@@ -1,0 +1,72 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Logo et Titre -->
+    <div class="text-center">
+      <div class="mx-auto h-16 w-16 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+        <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <h2 class="mt-6 text-3xl font-extrabold text-white">
+        Administration système
+      </h2>
+      <p class="mt-2 text-sm text-slate-400">
+        Accès réservé aux administrateurs de la plateforme
+      </p>
+    </div>
+
+    <!-- Formulaire de connexion -->
+    <div class="bg-white rounded-2xl shadow-xl p-8">
+      @if (errorMessage) {
+        <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+          <p class="text-sm text-red-700">{{ errorMessage }}</p>
+        </div>
+      }
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email administrateur</label>
+          <input id="email" type="email" formControlName="email"
+                 class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-700 focus:border-transparent transition duration-150"
+                 [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                 placeholder="admin@magestionhotel.com" autocomplete="email" />
+          @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+            <p class="mt-1 text-sm text-red-600">Email invalide</p>
+          }
+        </div>
+
+        <!-- Mot de passe -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Mot de passe</label>
+          <input id="password" type="password" formControlName="password"
+                 class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-700 focus:border-transparent transition duration-150"
+                 [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                 placeholder="••••••••" autocomplete="current-password" />
+          @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+            <p class="mt-1 text-sm text-red-600">Mot de passe requis</p>
+          }
+        </div>
+
+        <!-- Bouton de connexion -->
+        <div>
+          <button type="submit" [disabled]="loginForm.invalid || loading"
+                  class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150">
+            @if (loading) {
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            }
+            <span>{{ loading ? 'Connexion en cours...' : 'Se connecter' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="text-center text-sm text-slate-500">
+      <p>&copy; 2025 MaGestionHotel. Tous droits réservés.</p>
+    </div>
+  </div>
+</div>

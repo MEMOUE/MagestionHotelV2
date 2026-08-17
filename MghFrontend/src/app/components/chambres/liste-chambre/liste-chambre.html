@@ -16,6 +16,39 @@
       </button>
     </div>
 
+    <!-- Taux d'occupation -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+
+        <!-- Gros indicateur -->
+        <div class="lg:col-span-1 text-center lg:text-left">
+          <p class="text-gray-500 text-sm font-medium uppercase tracking-wide">Taux d'occupation</p>
+          <div class="flex items-baseline justify-center lg:justify-start gap-2 mt-2">
+            <span class="text-5xl font-extrabold text-indigo-600">{{ tauxOccupation }}%</span>
+          </div>
+          <p class="text-gray-500 text-sm mt-2">
+            {{ chambresOccupees }} chambre(s) occupée(s) sur {{ totalChambres }}
+          </p>
+          <div class="w-full bg-gray-100 rounded-full h-2.5 mt-4">
+            <div class="bg-indigo-600 h-2.5 rounded-full transition-all" [style.width.%]="tauxOccupation"></div>
+          </div>
+        </div>
+
+        <!-- Répartition par statut -->
+        <div class="lg:col-span-2">
+          <div class="relative h-52">
+            <canvas #occupationChartCanvas></canvas>
+            @if (!loading && totalChambres === 0) {
+              <p class="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                Aucune chambre enregistrée
+              </p>
+            }
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Filtres -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 // PrimeNG
 import { ButtonModule } from 'primeng/button';
@@ -22,6 +23,17 @@ import {
   STATUT_CHAMBRE_LABELS
 } from '../../../models/hotel.model';
 
+Chart.register(...registerables);
+
+const STATUT_CHART_COLORS: Record<string, string> = {
+  DISPONIBLE: '#22c55e',
+  OCCUPEE: '#ef4444',
+  RESERVEE: '#f59e0b',
+  EN_NETTOYAGE: '#3b82f6',
+  EN_MAINTENANCE: '#a855f7',
+  HORS_SERVICE: '#6b7280'
+};
+
 @Component({
   selector: 'app-liste-chambres',
   standalone: true,
@@ -37,7 +49,12 @@ import {
   providers: [MessageService],
   templateUrl: './liste-chambre.html'
 })
-export class ListeChambres implements OnInit, OnDestroy {
+export class ListeChambres implements OnInit, AfterViewInit, OnDestroy {
+
+  @ViewChild('occupationChartCanvas') occupationChartCanvas?: ElementRef<HTMLCanvasElement>;
+  private occupationChart?: Chart;
+  private viewReady = false;
+
   chambres: Chambre[] = [];
   filteredChambres: Chambre[] = [];
   loading = false;
@@ -82,9 +99,15 @@ export class ListeChambres implements OnInit, OnDestroy {
     this.loadChambres();
   }
 
+  ngAfterViewInit(): void {
+    this.viewReady = true;
+    this.renderOccupationChart();
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.occupationChart?.destroy();
   }
 
   private loadHotelId(): void {
@@ -127,6 +150,7 @@ export class ListeChambres implements OnInit, OnDestroy {
           this.chambres = chambres;
           this.applyFilters();
           this.loading = false;
+          this.renderOccupationChart();
         },
         error: (error) => {
           console.error('Erreur lors du chargement des chambres:', error);
@@ -201,6 +225,47 @@ export class ListeChambres implements OnInit, OnDestroy {
 
   get totalChambres(): number {
     return this.chambres.length;
+  }
+
+  // ── Taux d'occupation ────────────────────────────────────────────────────────
+
+  get chambresOccupees(): number {
+    return this.chambres.filter(c => c.statut === StatutChambre.OCCUPEE).length;
+  }
+
+  /** Taux d'occupation = chambres occupées / total des chambres (arrondi, en %). */
+  get tauxOccupation(): number {
+    if (this.chambres.length === 0) return 0;
+    return Math.round((this.chambresOccupees / this.chambres.length) * 100);
+  }
+
+  private renderOccupationChart(): void {
+    if (!this.viewReady) return;
+    const ctx = this.occupationChartCanvas?.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const counts = Object.values(StatutChambre).map(statut =>
+      this.chambres.filter(c => c.statut === statut).length
+    );
+
+    this.occupationChart?.destroy();
+    const config: ChartConfiguration<'doughnut'> = {
+      type: 'doughnut',
+      data: {
+        labels: Object.values(StatutChambre).map(s => this.getStatutLabel(s)),
+        datasets: [{
+          data: counts,
+          backgroundColor: Object.values(StatutChambre).map(s => STATUT_CHART_COLORS[s])
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+      }
+    };
+    this.occupationChart = new Chart(ctx, config);
   }
 
   getTypeLabel(type: string): string {

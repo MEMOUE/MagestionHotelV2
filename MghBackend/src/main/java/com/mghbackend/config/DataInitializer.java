@@ -1,11 +1,15 @@
 package com.mghbackend.config;
 
 import com.mghbackend.entity.Role;
+import com.mghbackend.entity.SystemAdmin;
 import com.mghbackend.enums.TypePermission;
 import com.mghbackend.repository.RoleRepository;
+import com.mghbackend.repository.SystemAdminRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,14 @@ import java.util.Set;
 public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
+    private final SystemAdminRepository systemAdminRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.default-email:admin@magestionhotel.com}")
+    private String defaultAdminEmail;
+
+    @Value("${admin.default-password:Passer@123}")
+    private String defaultAdminPassword;
 
     @Override
     @Transactional
@@ -25,8 +37,30 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Initialisation des données...");
 
         createOrUpdateRoles();
+        createDefaultAdminIfNeeded();
 
         log.info("Initialisation des données terminée");
+    }
+
+    /**
+     * Crée le tout premier compte administrateur système au démarrage si aucun n'existe.
+     * Email/mot de passe configurables via ADMIN_DEFAULT_EMAIL / ADMIN_DEFAULT_PASSWORD.
+     * ⚠️ Le mot de passe par défaut doit être changé immédiatement après la première connexion.
+     */
+    private void createDefaultAdminIfNeeded() {
+        if (systemAdminRepository.count() > 0) {
+            return;
+        }
+
+        SystemAdmin admin = new SystemAdmin();
+        admin.setName("Administrateur");
+        admin.setEmail(defaultAdminEmail);
+        admin.setPassword(passwordEncoder.encode(defaultAdminPassword));
+        admin.setActive(true);
+        systemAdminRepository.save(admin);
+
+        log.warn("⚠️ Compte administrateur système créé : {} — changez le mot de passe par défaut immédiatement !",
+                defaultAdminEmail);
     }
 
     private void createOrUpdateRoles() {

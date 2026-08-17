@@ -2,35 +2,79 @@
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
-  <p-toolbar>
-    <ng-template pTemplate="left">
-      <h2><i class="pi pi-calendar"></i> Gestion des Réservations</h2>
-    </ng-template>
-    <ng-template pTemplate="right">
-      <p-button label="Nouvelle Réservation" icon="pi pi-plus" (onClick)="createReservation()" severity="success"></p-button>
-    </ng-template>
-  </p-toolbar>
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="page-header-icon">
+      <i class="pi pi-calendar"></i>
+    </div>
+    <div class="page-header-text">
+      <h2>Gestion des Réservations</h2>
+      <p>Réservations, check-in et check-out en un coup d'œil</p>
+    </div>
+    <p-button label="Nouvelle Réservation" icon="pi pi-plus" (onClick)="createReservation()" severity="success"></p-button>
+  </div>
 
   <!-- Statistiques -->
-  <div class="grid mt-3 mb-3">
-    <div class="col-12 md:col-6 lg:col-2">
-      <p-card><div class="flex align-items-center"><i class="pi pi-list text-4xl text-primary mr-3"></i><div><div class="text-500 font-medium mb-1">Total</div><div class="text-900 text-xl font-bold">{{ stats.total }}</div></div></div></p-card>
-    </div>
-    <div class="col-12 md:col-6 lg:col-2">
-      <p-card><div class="flex align-items-center"><i class="pi pi-clock text-4xl text-orange-500 mr-3"></i><div><div class="text-500 font-medium mb-1">En attente</div><div class="text-900 text-xl font-bold">{{ stats.enAttente }}</div></div></div></p-card>
-    </div>
-    <div class="col-12 md:col-6 lg:col-2">
-      <p-card><div class="flex align-items-center"><i class="pi pi-check-circle text-4xl text-green-500 mr-3"></i><div><div class="text-500 font-medium mb-1">Confirmées</div><div class="text-900 text-xl font-bold">{{ stats.confirmees }}</div></div></div></p-card>
-    </div>
-    <div class="col-12 md:col-6 lg:col-2">
-      <p-card><div class="flex align-items-center"><i class="pi pi-home text-4xl text-blue-500 mr-3"></i><div><div class="text-500 font-medium mb-1">En cours</div><div class="text-900 text-xl font-bold">{{ stats.enCours }}</div></div></div></p-card>
-    </div>
-    <div class="col-12 md:col-6 lg:col-2">
-      <p-card><div class="flex align-items-center"><i class="pi pi-sign-in text-4xl text-cyan-500 mr-3"></i><div><div class="text-500 font-medium mb-1">Arrivées aujourd'hui</div><div class="text-900 text-xl font-bold">{{ stats.aujourdhuiArrivees }}</div></div></div></p-card>
-    </div>
-    <div class="col-12 md:col-6 lg:col-2">
-      <p-card><div class="flex align-items-center"><i class="pi pi-sign-out text-4xl text-purple-500 mr-3"></i><div><div class="text-500 font-medium mb-1">Départs aujourd'hui</div><div class="text-900 text-xl font-bold">{{ stats.aujourdhuiDeparts }}</div></div></div></p-card>
-    </div>
+  <div class="statistics-grid">
+    <p-card styleClass="stat-card total-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-list"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ stats.total }}</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card attente-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-clock"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ stats.enAttente }}</div>
+          <div class="stat-label">En attente</div>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card confirmees-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-check-circle"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ stats.confirmees }}</div>
+          <div class="stat-label">Confirmées</div>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card encours-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-home"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ stats.enCours }}</div>
+          <div class="stat-label">En cours</div>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card arrivees-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-sign-in"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ stats.aujourdhuiArrivees }}</div>
+          <div class="stat-label">Arrivées aujourd'hui</div>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card departs-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-sign-out"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ stats.aujourdhuiDeparts }}</div>
+          <div class="stat-label">Départs aujourd'hui</div>
+        </div>
+      </div>
+    </p-card>
   </div>
 
   <!-- Filtres -->
@@ -67,7 +111,7 @@
 
   <!-- Table -->
   <p-card class="mt-3">
-    <p-table [value]="filteredReservations" [loading]="loading" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]" [showCurrentPageReport]="true" currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} réservations" responsiveLayout="scroll">
+    <p-table [value]="filteredReservations" [loading]="loading" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]" [showCurrentPageReport]="true" currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} réservations" responsiveLayout="scroll" styleClass="p-datatable-striped">
 
       <ng-template pTemplate="header">
         <tr>
@@ -115,7 +159,7 @@
               <!-- ✅ Bouton Remise -->
               <p-button *ngIf="canApplyRemise(reservation)" icon="pi pi-percentage" (onClick)="openRemiseDialog(reservation)" severity="warn" [rounded]="true" [text]="true" pTooltip="Appliquer une remise"></p-button>
 
-              <p-button *ngIf="reservation.statut !== 'TERMINEE' && reservation.statut !== 'ANNULEE'" icon="pi pi-times" (onClick)="cancelReservation(reservation)" severity="danger" [rounded]="true" [text]="true" pTooltip="Annuler"></p-button>
+              <p-button *ngIf="canCancel(reservation)" icon="pi pi-times" (onClick)="cancelReservation(reservation)" severity="danger" [rounded]="true" [text]="true" pTooltip="Annuler"></p-button>
             </div>
           </td>
         </tr>

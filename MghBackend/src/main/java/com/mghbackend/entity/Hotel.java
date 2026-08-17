@@ -37,6 +37,10 @@ public class Hotel extends BaseEntity {
 	@Column(length = 50)
 	private String taxNumber;
 
+	/** Email optionnel du propriétaire — reçoit le rapport financier mensuel automatique. */
+	@Column(length = 100)
+	private String ownerEmail;
+
 	@Column(nullable = false)
 	private Boolean active = true;
 

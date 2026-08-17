@@ -312,7 +312,19 @@ export const routes: Routes = [
     path: 'forgot-password',
     component: ForgotPassword
   },
-  { path: 'reset-password', component: ResetPassword }
+  { path: 'reset-password', component: ResetPassword },
+  {
+    path: 'admin/login',
+    loadComponent: () => import('./components/admin/admin-login/admin-login')
+      .then(m => m.AdminLogin)
+  },
+  {
+    path: 'admin/hotels',
+    canActivate: [AuthGuard],
+    data: { accountType: 'ADMIN' },
+    loadComponent: () => import('./components/admin/admin-hotels/admin-hotels')
+      .then(m => m.AdminHotels)
+  }
 
   ,
   {

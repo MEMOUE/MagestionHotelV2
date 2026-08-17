@@ -42,8 +42,9 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    // L'utilisateur n'est pas connecté - rediriger vers la page de connexion
-    this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+    // L'utilisateur n'est pas connecté - rediriger vers la page de connexion appropriée
+    const loginPath = route.data['accountType'] === 'ADMIN' ? '/admin/login' : '/login';
+    this.router.navigate([loginPath], { queryParams: { returnUrl: state.url } });
     return false;
   }
 }

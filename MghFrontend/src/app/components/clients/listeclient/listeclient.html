@@ -112,6 +112,7 @@
           <th>Nationalité</th>
           <th>Ville/Pays</th>
           <th>Type Pièce</th>
+          <th class="text-center">Fidélité</th>
           <th class="text-center">Actions</th>
         </tr>
       </ng-template>
@@ -141,9 +142,18 @@
             <span *ngIf="!client.typePiece">-</span>
           </td>
           <td class="text-center">
-            <button 
-              pButton 
-              icon="pi pi-eye" 
+            <p-tag
+              *ngIf="isFidele(client)"
+              value="Fidèle"
+              icon="pi pi-star-fill"
+              severity="warn">
+            </p-tag>
+            <span *ngIf="!isFidele(client)" class="text-muted">-</span>
+          </td>
+          <td class="text-center">
+            <button
+              pButton
+              icon="pi pi-eye"
               class="p-button-rounded p-button-info p-button-text"
               pTooltip="Voir détails"
               (click)="viewClient(client)">
@@ -168,7 +178,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center">
+          <td colspan="8" class="text-center">
             <div class="empty-state">
               <i class="pi pi-users" style="font-size: 3rem; color: var(--surface-400);"></i>
               <p>Aucun client trouvé</p>

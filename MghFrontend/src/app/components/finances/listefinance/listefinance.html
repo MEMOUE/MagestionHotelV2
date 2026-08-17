@@ -79,6 +79,28 @@
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
+       GRAPHIQUES — évolution mensuelle & répartition par catégorie
+       ══════════════════════════════════════════════════════════ -->
+  <div class="charts-grid">
+    <p-card styleClass="chart-card">
+      <div class="chart-title">Évolution mensuelle (6 derniers mois)</div>
+      <div class="chart-wrapper">
+        <canvas #evolutionChartCanvas></canvas>
+      </div>
+    </p-card>
+
+    <p-card styleClass="chart-card">
+      <div class="chart-title">Top catégories du mois</div>
+      <div class="chart-wrapper">
+        <canvas #categoriesChartCanvas></canvas>
+        <p *ngIf="statistiques && !statistiques.topCategories?.length" class="chart-empty">
+          Aucune donnée pour le mois en cours
+        </p>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
        BARRE D'OUTILS
        ══════════════════════════════════════════════════════════ -->
   <p-toolbar styleClass="mb-4">

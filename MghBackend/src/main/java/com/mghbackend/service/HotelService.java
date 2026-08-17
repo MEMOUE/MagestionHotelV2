@@ -6,8 +6,9 @@ import com.mghbackend.dto.*;
 import com.mghbackend.dto.request.CreateHotelRequest;
 import com.mghbackend.dto.request.UpdatePasswordRequest;
 import com.mghbackend.entity.Hotel;
-import com.mghbackend.repository.HotelRepository;
+import com.mghbackend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +20,25 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class HotelService {
 
 	private final HotelRepository hotelRepository;
 	private final PasswordEncoder passwordEncoder;
+
+	// Dépendances nécessaires à la suppression complète (cascade manuelle) d'un hôtel
+	private final PaiementRepository paiementRepository;
+	private final FactureRepository factureRepository;
+	private final CommandeRestaurantRepository commandeRestaurantRepository;
+	private final MouvementStockRepository mouvementStockRepository;
+	private final ReservationRepository reservationRepository;
+	private final ProduitRepository produitRepository;
+	private final ProduitMenuRepository produitMenuRepository;
+	private final ChambreRepository chambreRepository;
+	private final ClientRepository clientRepository;
+	private final FournisseurRepository fournisseurRepository;
+	private final TransactionRepository transactionRepository;
+	private final UserRepository userRepository;
 
 	public HotelDto createHotel(CreateHotelRequest request) {
 		// Vérifier si l'email existe déjà
@@ -106,6 +122,7 @@ public class HotelService {
 		hotel.setAddress(hotelDto.getAddress());
 		hotel.setLogoUrl(hotelDto.getLogoUrl());
 		hotel.setTaxNumber(hotelDto.getTaxNumber());
+		hotel.setOwnerEmail(hotelDto.getOwnerEmail());
 
 		Hotel updatedHotel = hotelRepository.save(hotel);
 		return convertToDto(updatedHotel);
@@ -143,6 +160,36 @@ public class HotelService {
 		hotelRepository.save(hotel);
 	}
 
+	/**
+	 * Supprime définitivement un hôtel et toutes ses données (réservations, chambres,
+	 * clients, commandes restaurant, stock, finances, employés...).
+	 * Suppression manuelle dans l'ordre des dépendances (enfants avant parents) car
+	 * ces entités ne sont pas toutes rattachées à Hotel par un cascade JPA.
+	 * L'ensemble est transactionnel : en cas d'erreur à n'importe quelle étape,
+	 * rien n'est supprimé (rollback complet).
+	 */
+	public void deleteHotel(Long id) {
+		Hotel hotel = hotelRepository.findById(id)
+				.orElseThrow(() -> new BusinessException("Hôtel non trouvé"));
+
+		paiementRepository.deleteAll(paiementRepository.findByHotel(hotel));
+		factureRepository.deleteAll(factureRepository.findByHotel(hotel)); // cascade → lignes de facture
+		commandeRestaurantRepository.deleteAll(commandeRestaurantRepository.findByHotel(hotel)); // cascade → lignes de commande
+		mouvementStockRepository.deleteAll(mouvementStockRepository.findByHotel(hotel));
+		reservationRepository.deleteAll(reservationRepository.findByHotel(hotel));
+		produitRepository.deleteAll(produitRepository.findByHotel(hotel));
+		produitMenuRepository.deleteAll(produitMenuRepository.findByHotel(hotel));
+		chambreRepository.deleteAll(chambreRepository.findByHotel(hotel));
+		clientRepository.deleteAll(clientRepository.findByHotel(hotel));
+		fournisseurRepository.deleteAll(fournisseurRepository.findByHotel(hotel));
+		transactionRepository.deleteAll(transactionRepository.findByHotelIdOrderByDateTransactionDesc(hotel.getId()));
+		userRepository.deleteAll(userRepository.findByHotel(hotel));
+
+		hotelRepository.delete(hotel);
+
+		log.warn("🗑️ Hôtel supprimé définitivement : {} (id={})", hotel.getName(), id);
+	}
+
 	private HotelDto convertToDto(Hotel hotel) {
 		HotelDto dto = new HotelDto();
 		dto.setId(hotel.getId());
@@ -152,6 +199,7 @@ public class HotelService {
 		dto.setAddress(hotel.getAddress());
 		dto.setLogoUrl(hotel.getLogoUrl());
 		dto.setTaxNumber(hotel.getTaxNumber());
+		dto.setOwnerEmail(hotel.getOwnerEmail());
 		dto.setActive(hotel.getActive());
 		dto.setSubscriptionEnd(hotel.getSubscriptionEnd());
 		dto.setCreatedAt(hotel.getCreatedAt());

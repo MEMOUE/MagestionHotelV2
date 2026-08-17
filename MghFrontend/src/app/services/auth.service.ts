@@ -7,7 +7,7 @@ import { environment } from '../../environment/environment';
 export interface LoginRequest {
   email: string;
   password: string;
-  accountType: 'HOTEL' | 'USER';
+  accountType: 'HOTEL' | 'USER' | 'ADMIN';
 }
 
 export interface RegisterRequest {
@@ -27,7 +27,7 @@ export interface LoginResponse {
   name: string;
   firstName?: string;
   lastName?: string;
-  accountType: 'HOTEL' | 'USER';
+  accountType: 'HOTEL' | 'USER' | 'ADMIN';
   hotelId: number;
   hotelName: string;
   roles?: string[];
@@ -42,7 +42,7 @@ export interface ApiResponse<T> {
 
 export interface ForgotPasswordRequest {
   email: string;
-  accountType: 'HOTEL' | 'USER';
+  accountType: 'HOTEL' | 'USER' | 'ADMIN';
 }
 
 export interface ResetPasswordRequest {
@@ -77,6 +77,10 @@ export class AuthService {
     return !!this.currentUserValue && !!this.currentUserValue.token;
   }
 
+  public get isAdmin(): boolean {
+    return this.currentUserValue?.accountType === 'ADMIN';
+  }
+
   public get token(): string | null {
     return this.currentUserValue?.token || null;
   }
@@ -98,11 +102,11 @@ export class AuthService {
       );
   }
 
-  logout(): void {
+  logout(redirectTo: string = '/login'): void {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('token');
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    this.router.navigate([redirectTo]);
   }
 
   // ── Mot de passe oublié ─────────────────────────────────────────

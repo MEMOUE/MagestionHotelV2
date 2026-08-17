@@ -26,10 +26,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // ─── Disponibilité ────────────────────────────────────────────────────────
 
-    /** Conflits de disponibilité pour une chambre sur une période (création) */
+    /**
+     * Conflits de disponibilité pour une chambre sur une période (création).
+     * Intervalle semi-ouvert : une nouvelle réservation peut démarrer le jour même
+     * où une réservation existante se termine (départ = arrivée n'est pas un conflit).
+     */
     @Query("SELECT r FROM Reservation r WHERE r.chambre = :chambre AND " +
             "r.statut NOT IN ('ANNULEE', 'TERMINEE') AND " +
-            "(r.dateArrivee <= :dateDepart AND r.dateDepart >= :dateArrivee)")
+            "(r.dateArrivee < :dateDepart AND r.dateDepart > :dateArrivee)")
     List<Reservation> findReservationsByChambreAndPeriode(
             @Param("chambre") Chambre chambre,
             @Param("dateArrivee") LocalDate dateArrivee,
@@ -44,7 +48,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query("SELECT r FROM Reservation r WHERE r.chambre = :chambre AND " +
             "r.id != :excludeId AND " +
             "r.statut NOT IN ('ANNULEE', 'TERMINEE') AND " +
-            "(r.dateArrivee <= :dateDepart AND r.dateDepart >= :dateArrivee)")
+            "(r.dateArrivee < :dateDepart AND r.dateDepart > :dateArrivee)")
     List<Reservation> findReservationsByChambreAndPeriodeExcluding(
             @Param("chambre") Chambre chambre,
             @Param("dateArrivee") LocalDate dateArrivee,

@@ -11,6 +11,8 @@ export interface HotelProfile {
   address?: string;
   logoUrl?: string;
   taxNumber?: string;
+  /** Email optionnel du propriétaire — reçoit le rapport financier mensuel automatique. */
+  ownerEmail?: string;
   active?: boolean;
   subscriptionEnd?: string;
   createdAt?: string;

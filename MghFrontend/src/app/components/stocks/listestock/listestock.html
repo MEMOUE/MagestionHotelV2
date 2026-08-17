@@ -1,67 +1,59 @@
-<div class="container-fluid p-4">
+<div class="stock-container">
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
   <!-- En-tête -->
-  <div class="mb-4">
-    <h2 class="text-2xl font-bold text-gray-800">Gestion des Stocks</h2>
-    <p class="text-gray-600">Gérez vos produits et suivez vos stocks</p>
+  <div class="page-header">
+    <div class="page-header-icon">
+      <i class="pi pi-box"></i>
+    </div>
+    <div>
+      <h2>Gestion des Stocks</h2>
+      <p>Gérez vos produits et suivez vos niveaux de stock</p>
+    </div>
   </div>
 
   <!-- Statistiques -->
-  <div class="grid mb-4">
-    <div class="col-12 md:col-3">
-      <p-card styleClass="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon bg-blue-100">
-            <i class="pi pi-box text-blue-600 text-3xl"></i>
-          </div>
-          <div class="stat-details">
-            <div class="stat-value">{{ totalProduits }}</div>
-            <div class="stat-label">Total produits</div>
-          </div>
+  <div class="statistics-grid">
+    <p-card styleClass="stat-card total-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-box"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ totalProduits }}</div>
+          <div class="stat-label">Total produits</div>
         </div>
-      </p-card>
-    </div>
-    <div class="col-12 md:col-3">
-      <p-card styleClass="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon bg-green-100">
-            <i class="pi pi-money-bill text-green-600 text-3xl"></i>
-          </div>
-          <div class="stat-details">
-            <div class="stat-value">{{ formatPrice(totalValeurStock) }}</div>
-            <div class="stat-label">Valeur totale</div>
-          </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card valeur-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-money-bill"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ formatPrice(totalValeurStock) }}</div>
+          <div class="stat-label">Valeur totale</div>
         </div>
-      </p-card>
-    </div>
-    <div class="col-12 md:col-3">
-      <p-card styleClass="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon bg-orange-100">
-            <i class="pi pi-exclamation-triangle text-orange-600 text-3xl"></i>
-          </div>
-          <div class="stat-details">
-            <div class="stat-value">{{ produitsEnAlerte }}</div>
-            <div class="stat-label">En alerte</div>
-          </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card alerte-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ produitsEnAlerte }}</div>
+          <div class="stat-label">En alerte</div>
         </div>
-      </p-card>
-    </div>
-    <div class="col-12 md:col-3">
-      <p-card styleClass="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon bg-red-100">
-            <i class="pi pi-times-circle text-red-600 text-3xl"></i>
-          </div>
-          <div class="stat-details">
-            <div class="stat-value">{{ produitsEnRupture }}</div>
-            <div class="stat-label">En rupture</div>
-          </div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="stat-card rupture-card">
+      <div class="stat-content">
+        <div class="stat-icon"><i class="pi pi-times-circle"></i></div>
+        <div class="stat-details">
+          <div class="stat-value">{{ produitsEnRupture }}</div>
+          <div class="stat-label">En rupture</div>
         </div>
-      </p-card>
-    </div>
+      </div>
+    </p-card>
   </div>
 
   <!-- Tableau des produits -->
@@ -100,7 +92,7 @@
       [rowsPerPageOptions]="[10, 25, 50]"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} produits"
-      styleClass="p-datatable-gridlines">
+      styleClass="p-datatable-striped">
 
       <ng-template pTemplate="header">
         <tr>

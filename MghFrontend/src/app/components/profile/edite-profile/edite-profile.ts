@@ -64,7 +64,8 @@ export class EditeProfile implements OnInit {
       phone: [''],
       address: [''],
       taxNumber: [''],
-      logoUrl: ['']
+      logoUrl: [''],
+      ownerEmail: ['', [Validators.email]]
     });
   }
 
@@ -79,7 +80,8 @@ export class EditeProfile implements OnInit {
             phone: response.data.phone || '',
             address: response.data.address || '',
             taxNumber: response.data.taxNumber || '',
-            logoUrl: response.data.logoUrl || ''
+            logoUrl: response.data.logoUrl || '',
+            ownerEmail: response.data.ownerEmail || ''
           });
         } else {
           this.messageService.add({

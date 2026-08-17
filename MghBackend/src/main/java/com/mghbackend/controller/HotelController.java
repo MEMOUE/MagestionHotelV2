@@ -8,6 +8,7 @@ import com.mghbackend.dto.request.CreateHotelRequest;
 import com.mghbackend.dto.request.UpdatePasswordRequest;
 import com.mghbackend.security.CustomUserPrincipal;
 import com.mghbackend.service.HotelService;
+import com.mghbackend.service.RapportFinancierService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import java.util.List;
 public class HotelController {
 
 	private final HotelService hotelService;
+	private final RapportFinancierService rapportFinancierService;
 
 	@PostMapping("/register")
 	public ResponseEntity<ApiResponse<HotelDto>> createHotel(@Valid @RequestBody CreateHotelRequest request) {
@@ -134,6 +136,30 @@ public class HotelController {
 		try {
 			List<HotelDto> hotels = hotelService.searchHotels(keyword);
 			return ResponseEntity.ok(ApiResponse.success(hotels));
+		} catch (BusinessException e) {
+			return ResponseEntity.badRequest()
+					.body(ApiResponse.error(e.getMessage()));
+		}
+	}
+
+	@PostMapping("/{id}/rapport-financier")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> envoyerRapportFinancier(@PathVariable Long id) {
+		try {
+			rapportFinancierService.envoyerRapportMaintenant(id);
+			return ResponseEntity.ok(ApiResponse.success("Rapport financier envoyé avec succès", null));
+		} catch (BusinessException e) {
+			return ResponseEntity.badRequest()
+					.body(ApiResponse.error(e.getMessage()));
+		}
+	}
+
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> deleteHotel(@PathVariable Long id) {
+		try {
+			hotelService.deleteHotel(id);
+			return ResponseEntity.ok(ApiResponse.success("Hôtel supprimé définitivement", null));
 		} catch (BusinessException e) {
 			return ResponseEntity.badRequest()
 					.body(ApiResponse.error(e.getMessage()));

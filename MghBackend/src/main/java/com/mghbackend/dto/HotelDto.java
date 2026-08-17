@@ -28,6 +28,10 @@ public class HotelDto {
 	private String address;
 	private String logoUrl;
 	private String taxNumber;
+
+	@Email(message = "Format d'email invalide")
+	private String ownerEmail;
+
 	private Boolean active;
 	private LocalDateTime subscriptionEnd;
 	private LocalDateTime createdAt;

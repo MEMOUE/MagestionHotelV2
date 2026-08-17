@@ -170,8 +170,23 @@ export class Listrservation implements OnInit {
     });
   }
 
+  canCancel(reservation: Reservation): boolean {
+    return reservation.statut !== StatutReservation.TERMINEE &&
+      reservation.statut !== StatutReservation.ANNULEE &&
+      reservation.statut !== StatutReservation.EN_COURS;
+  }
+
   cancelReservation(reservation: Reservation): void {
-    if (reservation.statut === StatutReservation.TERMINEE || reservation.statut === StatutReservation.EN_COURS) return;
+    if (!this.canCancel(reservation)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Action impossible',
+        detail: reservation.statut === StatutReservation.EN_COURS
+          ? 'Impossible d\'annuler une réservation en cours. Effectuez d\'abord un check-out.'
+          : 'Cette réservation ne peut plus être annulée.'
+      });
+      return;
+    }
     this.confirmationService.confirm({
       message: `Annuler la réservation ${reservation.numeroReservation} ?`,
       header: "Confirmation d'annulation", icon: 'pi pi-exclamation-triangle', acceptButtonStyleClass: 'p-button-danger',

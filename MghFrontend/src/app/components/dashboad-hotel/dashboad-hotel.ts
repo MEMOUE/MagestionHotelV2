@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
 import { RouterModule } from '@angular/router';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { PermissionService, Permission } from '../../services/permission.service';
+import { AuthService } from '../../services/auth.service';
 
 interface DashboardModule {
   title: string;
@@ -18,7 +17,7 @@ interface DashboardModule {
 @Component({
   selector: 'app-dashboad-hotel',
   standalone: true,
-  imports: [CardModule, ButtonModule, RouterModule, NgClass],
+  imports: [RouterModule, NgClass, DatePipe],
   templateUrl: './dashboad-hotel.html',
   styleUrl: './dashboad-hotel.css'
 })
@@ -30,7 +29,7 @@ export class DashboadHotel implements OnInit {
     {
       title: 'Réservations',
       description: 'Réservations, check-in, check-out.',
-      icon: 'pi-calendar',
+      icon: 'pi-calendar-plus',
       route: '/reservation',
       gradient: 'from-blue-500 to-indigo-600',
       permissions: [Permission.VOIR_RESERVATIONS, Permission.CREER_RESERVATION]
@@ -46,7 +45,7 @@ export class DashboadHotel implements OnInit {
     {
       title: 'Restauration',
       description: 'Restaurant, bar et room service.',
-      icon: 'pi-shopping-cart',
+      icon: 'pi-shop',
       route: '/restauration',
       gradient: 'from-orange-500 to-amber-600',
       permissions: [Permission.VOIR_COMMANDES, Permission.CREER_COMMANDE]
@@ -78,36 +77,54 @@ export class DashboadHotel implements OnInit {
     {
       title: 'Clients',
       description: 'Gestion des Clients.',
-      icon: 'pi-user-edit',
+      icon: 'pi-id-card',
       route: '/clients',
-      gradient: 'from-teal-500 to-sky-100',
+      gradient: 'from-sky-500 to-cyan-600',
       permissions: [Permission.VOIR_RESERVATIONS, Permission.CREER_RESERVATION]
+    },
+    {
+      title: 'Planning',
+      description: 'Planning des Réservations.',
+      icon: 'pi-table',
+      route: '/planning',
+      gradient: 'from-cyan-500 to-sky-600',
+      permissions: [Permission.VOIR_RESERVATIONS]
     },
     {
       title: 'Paramètres',
       description: "Paramètres de l'hôtel.",
       icon: 'pi-cog',
       route: '/profile',
-      gradient: 'from-teal-500 to-sky-900',
+      gradient: 'from-slate-500 to-slate-700',
       permissions: [Permission.MODIFIER_CONFIGURATION],
       hotelOnly: true
-    },
-    {
-      title: 'Planning',
-      description: 'Planning des Réservations.',
-      icon: 'pi-chart-line',
-      route: '/planning',
-      gradient: 'from-cyan-500 to-sky-600',
-      permissions: [Permission.VOIR_RESERVATIONS]
     }
   ];
 
-  constructor(private permissionService: PermissionService) {}
+  hotelName = '';
+  greeting = '';
+  today = new Date();
+
+  constructor(
+    private permissionService: PermissionService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.visibleModules = this.allModules.filter(mod => {
       if (this.permissionService.isHotelAccount) return true;
       return this.permissionService.hasAnyPermission(...mod.permissions);
     });
+
+    const currentUser = this.authService.currentUserValue;
+    this.hotelName = currentUser?.hotelName || currentUser?.name || '';
+    this.greeting = this.buildGreeting();
+  }
+
+  private buildGreeting(): string {
+    const hour = this.today.getHours();
+    if (hour < 12) return 'Bonjour';
+    if (hour < 18) return 'Bon après-midi';
+    return 'Bonsoir';
   }
 }

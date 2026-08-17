@@ -1,0 +1,122 @@
+<div class="admin-hotels-container">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- Barre d'outils -->
+  <p-toolbar styleClass="mb-4">
+    <ng-template pTemplate="left">
+      <h2 class="m-0">Administration — Comptes Hôtel</h2>
+    </ng-template>
+    <ng-template pTemplate="right">
+      <button
+        pButton
+        label="Déconnexion"
+        icon="pi pi-sign-out"
+        class="p-button-secondary p-button-outlined"
+        (click)="logout()">
+      </button>
+    </ng-template>
+  </p-toolbar>
+
+  <p-card>
+    <!-- Barre de recherche -->
+    <div class="search-bar">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="searchKeyword"
+          (keyup.enter)="onSearch()"
+          placeholder="Rechercher par nom ou email..."
+          class="search-input">
+      </span>
+      <button
+        pButton
+        label="Rechercher"
+        icon="pi pi-search"
+        (click)="onSearch()"
+        class="p-button-primary">
+      </button>
+    </div>
+
+    <!-- Table des hôtels -->
+    <p-table
+      [value]="hotels"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Affichage de {first} à {last} sur {totalRecords} hôtels"
+      styleClass="p-datatable-striped">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Email propriétaire</th>
+          <th>Fin d'abonnement</th>
+          <th class="text-center">Statut</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-hotel>
+        <tr>
+          <td><strong>{{ hotel.name }}</strong></td>
+          <td>{{ hotel.email }}</td>
+          <td>
+            <span *ngIf="hotel.ownerEmail">{{ hotel.ownerEmail }}</span>
+            <span *ngIf="!hotel.ownerEmail" class="text-muted">Non renseigné</span>
+          </td>
+          <td>{{ hotel.subscriptionEnd ? (hotel.subscriptionEnd | date:'dd/MM/yyyy') : '-' }}</td>
+          <td class="text-center">
+            <p-tag
+              [value]="hotel.active ? 'Actif' : 'Inactif'"
+              [severity]="hotel.active ? 'success' : 'danger'">
+            </p-tag>
+          </td>
+          <td class="text-center">
+            <button
+              pButton
+              icon="pi pi-send"
+              class="p-button-rounded p-button-info p-button-text"
+              [loading]="sendingReportId === hotel.id"
+              [disabled]="!hotel.ownerEmail"
+              [pTooltip]="hotel.ownerEmail ? 'Envoyer le rapport financier du mois écoulé' : 'Aucun email propriétaire configuré'"
+              (click)="sendReport(hotel)">
+            </button>
+            <button
+              pButton
+              [icon]="hotel.active ? 'pi pi-lock' : 'pi pi-lock-open'"
+              class="p-button-rounded p-button-text"
+              [class.p-button-warning]="hotel.active"
+              [class.p-button-success]="!hotel.active"
+              [pTooltip]="hotel.active ? 'Désactiver le compte' : 'Activer le compte'"
+              (click)="toggleStatus(hotel)">
+            </button>
+            <button
+              pButton
+              icon="pi pi-trash"
+              class="p-button-rounded p-button-danger p-button-text"
+              pTooltip="Supprimer définitivement"
+              (click)="deleteHotel(hotel)">
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center">
+            <div class="empty-state">
+              <i class="pi pi-building" style="font-size: 3rem; color: var(--surface-400);"></i>
+              <p>Aucun hôtel trouvé</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

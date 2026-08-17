@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -27,6 +30,7 @@ import {
   TypeTransaction,
   StatutTransaction,
   ModePaiementTransaction,
+  StatistiquesFinancieres,
   TYPE_TRANSACTION_LABELS,
   TYPE_TRANSACTION_COLORS,
   STATUT_TRANSACTION_LABELS,
@@ -49,7 +53,16 @@ import {Toolbar} from 'primeng/toolbar';
   styleUrl: './listefinance.css',
   providers: [MessageService, ConfirmationService]
 })
-export class Listefinance implements OnInit {
+export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
+
+  @ViewChild('evolutionChartCanvas') evolutionChartCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('categoriesChartCanvas') categoriesChartCanvas?: ElementRef<HTMLCanvasElement>;
+
+  private evolutionChart?: Chart;
+  private categoriesChart?: Chart;
+
+  statistiques?: StatistiquesFinancieres;
+  loadingStats = false;
 
   // ── Données ───────────────────────────────────────────────────────────────────
   transactions: Transaction[] = [];
@@ -100,6 +113,17 @@ export class Listefinance implements OnInit {
 
   ngOnInit(): void {
     this.loadTransactions();
+    this.loadStatistiques();
+  }
+
+  ngAfterViewInit(): void {
+    this.viewReady = true;
+    this.tryRenderCharts();
+  }
+
+  ngOnDestroy(): void {
+    this.evolutionChart?.destroy();
+    this.categoriesChart?.destroy();
   }
 
   // ── Chargement ────────────────────────────────────────────────────────────────
@@ -119,6 +143,92 @@ export class Listefinance implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  loadStatistiques(): void {
+    this.loadingStats = true;
+    this.financeService.getStatistiques().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.statistiques = response.data;
+          this.tryRenderCharts();
+        }
+        this.loadingStats = false;
+      },
+      error: () => {
+        this.loadingStats = false;
+      }
+    });
+  }
+
+  // ── Graphiques ────────────────────────────────────────────────────────────────
+
+  private viewReady = false;
+
+  private tryRenderCharts(): void {
+    if (!this.viewReady || !this.statistiques) return;
+
+    const evolution = this.statistiques.evolutionMensuelle ?? [];
+    const evolutionCtx = this.evolutionChartCanvas?.nativeElement.getContext('2d');
+    if (evolutionCtx) {
+      this.evolutionChart?.destroy();
+      const config: ChartConfiguration = {
+        type: 'bar',
+        data: {
+          labels: evolution.map(e => e.mois),
+          datasets: [
+            {
+              label: 'Revenus',
+              data: evolution.map(e => e.revenus),
+              backgroundColor: '#4caf50'
+            },
+            {
+              label: 'Dépenses',
+              data: evolution.map(e => e.depenses),
+              backgroundColor: '#f44336'
+            },
+            {
+              label: 'Résultat',
+              data: evolution.map(e => e.resultat),
+              type: 'line',
+              borderColor: '#2196f3',
+              backgroundColor: '#2196f3',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { ticks: { callback: (v) => this.formatCurrency(Number(v)) } } }
+        }
+      };
+      this.evolutionChart = new Chart(evolutionCtx, config);
+    }
+
+    const topCategories = this.statistiques.topCategories ?? [];
+    const categoriesCtx = this.categoriesChartCanvas?.nativeElement.getContext('2d');
+    if (categoriesCtx) {
+      this.categoriesChart?.destroy();
+      const palette = ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336', '#00bcd4', '#607d8b'];
+      const config: ChartConfiguration = {
+        type: 'doughnut',
+        data: {
+          labels: topCategories.map(c => c.categorie),
+          datasets: [{
+            data: topCategories.map(c => c.montant),
+            backgroundColor: topCategories.map((_, i) => palette[i % palette.length])
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      };
+      this.categoriesChart = new Chart(categoriesCtx, config);
+    }
   }
 
   // ── Filtres + stats dynamiques ────────────────────────────────────────────────

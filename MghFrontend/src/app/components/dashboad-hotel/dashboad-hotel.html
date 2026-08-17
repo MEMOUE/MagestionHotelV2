@@ -1,63 +1,68 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-6 text-center">
+<div class="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-6">
 
   <!-- Header -->
-  <div class="mb-10 text-center">
-    <h1 class="text-4xl font-extrabold text-slate-800">
-      MaGestionHotel
-    </h1>
-    <p class="text-slate-500 mt-2 text-lg">
-      Dashboard de gestion du complexe hôtelier
-    </p>
+  <div class="max-w-7xl mx-auto mb-10">
+    <div class="header-banner rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
+      <div class="header-glow"></div>
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-sm font-medium text-white/70 uppercase tracking-wide mb-1">
+            {{ today | date: "EEEE d MMMM y" }}
+          </p>
+          <h1 class="text-3xl sm:text-4xl font-extrabold">
+            {{ greeting }}{{ hotelName ? ',' : '' }}
+            <span class="text-amber-300">{{ hotelName }}</span>
+          </h1>
+          <p class="text-white/70 mt-2">
+            Voici un accès rapide à tous vos modules de gestion.
+          </p>
+        </div>
+        <div class="hidden sm:flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm">
+          <i class="pi pi-building text-3xl text-white"></i>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Cards Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-    @for (module of visibleModules; track module.route) {
-      <div class="group relative rounded-3xl bg-white/70 backdrop-blur-xl
-                  border border-white/50 shadow-lg
-                  hover:shadow-2xl transition-all duration-300
-                  hover:-translate-y-2">
+    @for (module of visibleModules; track module.route; let i = $index) {
+      <a
+        [routerLink]="module.route"
+        class="module-card group relative flex items-start gap-4 rounded-2xl bg-white
+               border border-slate-100 shadow-sm hover:shadow-xl
+               transition-all duration-300 hover:-translate-y-1 p-6 overflow-hidden"
+        [style.animation-delay.ms]="i * 60">
+
+        <!-- Accent bar -->
+        <span class="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b" [ngClass]="module.gradient"></span>
 
         <!-- Icon -->
-        <div class="absolute -top-6 left-6">
-          <div
-            class="w-14 h-14 rounded-2xl bg-gradient-to-br text-white
-                   flex items-center justify-center text-2xl shadow-lg"
-            [ngClass]="module.gradient">
-            <i class="pi" [ngClass]="module.icon"></i>
-          </div>
+        <div
+          class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br text-white
+                 flex items-center justify-center text-2xl shadow-md
+                 group-hover:scale-110 transition-transform duration-300"
+          [ngClass]="module.gradient">
+          <i class="pi" [ngClass]="module.icon"></i>
         </div>
 
         <!-- Content -->
-        <div class="pt-10 px-6 pb-6">
-          <h2 class="text-xl font-semibold text-slate-800 mb-2">
+        <div class="flex-1 min-w-0">
+          <h2 class="text-lg font-semibold text-slate-800 mb-1">
             {{ module.title }}
           </h2>
-
-          <p class="text-slate-600 text-sm mb-6">
+          <p class="text-slate-500 text-sm leading-relaxed">
             {{ module.description }}
           </p>
-
-          <button
-            pButton
-            type="button"
-            label="Ouvrir le module"
-            icon="pi pi-arrow-right"
-            class="w-full !rounded-xl"
-            [routerLink]="module.route">
-          </button>
         </div>
 
-        <!-- Hover glow -->
-        <div
-          class="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100
-                 transition duration-300 pointer-events-none
-                 bg-gradient-to-br from-white/20 to-transparent">
-        </div>
-      </div>
+        <!-- Arrow -->
+        <i class="pi pi-arrow-right text-slate-300 group-hover:text-slate-600
+                  group-hover:translate-x-1 transition-all duration-300 mt-1"></i>
+      </a>
     } @empty {
-      <div class="col-span-full text-center py-12">
+      <div class="col-span-full text-center py-16 bg-white rounded-2xl shadow-sm">
         <i class="pi pi-lock text-6xl text-slate-300 mb-4"></i>
         <p class="text-slate-500 text-lg">Aucun module accessible avec vos permissions actuelles.</p>
         <p class="text-slate-400 text-sm mt-2">Contactez votre administrateur pour obtenir les accès nécessaires.</p>

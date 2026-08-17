@@ -125,6 +125,30 @@
             </small>
           </div>
 
+          <!-- Email du propriétaire (optionnel) -->
+          <div class="form-field full-width">
+            <label for="ownerEmail" class="field-label">
+              <i class="pi pi-send"></i>
+              Email du propriétaire (optionnel)
+            </label>
+            <input
+              id="ownerEmail"
+              type="email"
+              pInputText
+              formControlName="ownerEmail"
+              placeholder="proprietaire@exemple.com"
+              [class.invalid]="isFieldInvalid('ownerEmail')"
+              class="form-input">
+            <small *ngIf="isFieldInvalid('ownerEmail')" class="error-message">
+              {{ getFieldError('ownerEmail') }}
+            </small>
+            <small class="field-hint">
+              <i class="pi pi-info-circle"></i>
+              Si renseigné, le rapport financier complet (entrées et sorties d'argent) sera envoyé
+              automatiquement à cette adresse à la fin de chaque mois
+            </small>
+          </div>
+
         </div>
 
         <!-- Actions -->

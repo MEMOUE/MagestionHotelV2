@@ -49,8 +49,6 @@ export interface CommandeRestaurant {
 
 export enum StatutCommandeRestaurant {
   EN_ATTENTE = 'EN_ATTENTE',
-  EN_PREPARATION = 'EN_PREPARATION',
-  PRETE = 'PRETE',
   SERVIE = 'SERVIE',
   PAYEE = 'PAYEE',
   ANNULEE = 'ANNULEE'
@@ -58,8 +56,6 @@ export enum StatutCommandeRestaurant {
 
 export const STATUT_COMMANDE_LABELS: Record<StatutCommandeRestaurant, string> = {
   [StatutCommandeRestaurant.EN_ATTENTE]: 'En attente',
-  [StatutCommandeRestaurant.EN_PREPARATION]: 'En préparation',
-  [StatutCommandeRestaurant.PRETE]: 'Prête',
   [StatutCommandeRestaurant.SERVIE]: 'Servie',
   [StatutCommandeRestaurant.PAYEE]: 'Payée',
   [StatutCommandeRestaurant.ANNULEE]: 'Annulée'
@@ -67,8 +63,6 @@ export const STATUT_COMMANDE_LABELS: Record<StatutCommandeRestaurant, string> = 
 
 export const STATUT_COMMANDE_COLORS: Record<StatutCommandeRestaurant, string> = {
   [StatutCommandeRestaurant.EN_ATTENTE]: 'warning',
-  [StatutCommandeRestaurant.EN_PREPARATION]: 'info',
-  [StatutCommandeRestaurant.PRETE]: 'success',
   [StatutCommandeRestaurant.SERVIE]: 'primary',
   [StatutCommandeRestaurant.PAYEE]: 'success',
   [StatutCommandeRestaurant.ANNULEE]: 'danger'
