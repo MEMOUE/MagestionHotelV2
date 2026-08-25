@@ -3,7 +3,8 @@
   "configurations": [
     {
       "name": "MghFrontend",
-      "url": "http://localhost:4200",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "MghFrontend", "start"],
       "port": 4200
     }
   ]

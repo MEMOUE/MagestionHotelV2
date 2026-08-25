@@ -13,6 +13,117 @@
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
+       FILTRES — pilotent les cartes, les graphiques et le tableau
+       ══════════════════════════════════════════════════════════ -->
+  <p-card styleClass="filters-card mb-4">
+    <!-- Ligne 1 : texte + type + catégorie + statut -->
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label>Rechercher</label>
+        <p-iconfield iconPosition="left">
+          <p-inputicon styleClass="pi pi-search" />
+          <input pInputText type="text"
+                 [(ngModel)]="searchTerm"
+                 (input)="applyFilter()"
+                 placeholder="Référence, catégorie, description..."
+                 class="w-full" />
+        </p-iconfield>
+      </div>
+
+      <div class="filter-field">
+        <label>Type</label>
+        <p-select [(ngModel)]="selectedType"
+                  [options]="typesTransaction"
+                  optionLabel="label" optionValue="value"
+                  placeholder="Tous les types"
+                  (onChange)="onFilterChange()"
+                  [showClear]="true"
+                  class="w-full">
+        </p-select>
+      </div>
+
+      <div class="filter-field">
+        <label>Catégorie</label>
+        <p-select [(ngModel)]="selectedCategorie"
+                  [options]="categoriesTransaction"
+                  optionLabel="label" optionValue="value"
+                  placeholder="Toutes les catégories"
+                  (onChange)="onFilterChange()"
+                  [showClear]="true"
+                  class="w-full">
+        </p-select>
+      </div>
+
+      <div class="filter-field">
+        <label>Statut</label>
+        <p-select [(ngModel)]="selectedStatut"
+                  [options]="statutsTransaction"
+                  optionLabel="label" optionValue="value"
+                  placeholder="Tous les statuts"
+                  (onChange)="onFilterChange()"
+                  [showClear]="true"
+                  class="w-full">
+        </p-select>
+      </div>
+    </div>
+
+    <!-- Ligne 2 : dates -->
+    <div class="filters-grid mt-3">
+      <div class="filter-field">
+        <label><i class="pi pi-calendar mr-1"></i>Date de début</label>
+        <p-datepicker [(ngModel)]="dateDebut"
+                      (onSelect)="onFilterChange()"
+                      (onClearClick)="onFilterChange()"
+                      dateFormat="dd/mm/yy"
+                      placeholder="Sélectionner une date"
+                      [showIcon]="true"
+                      [showClear]="true"
+                      class="w-full">
+        </p-datepicker>
+      </div>
+
+      <div class="filter-field">
+        <label><i class="pi pi-calendar mr-1"></i>Date de fin</label>
+        <p-datepicker [(ngModel)]="dateFin"
+                      (onSelect)="onFilterChange()"
+                      (onClearClick)="onFilterChange()"
+                      dateFormat="dd/mm/yy"
+                      placeholder="Sélectionner une date"
+                      [showIcon]="true"
+                      [showClear]="true"
+                      [minDate]="dateDebut ?? undefined"
+                      class="w-full">
+        </p-datepicker>
+      </div>
+
+      <div class="filter-field" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:.5rem">
+        <p-button label="Réinitialiser" icon="pi pi-filter-slash"
+                  severity="secondary" [outlined]="true"
+                  (onClick)="clearFilters()"
+                  [disabled]="!hasActiveFilters">
+        </p-button>
+      </div>
+    </div>
+
+    <!-- Bandeau filtres actifs -->
+    <div *ngIf="hasActiveFilters"
+         class="mt-3 p-2 border-round border-1 border-primary-200 bg-primary-50 flex align-items-center gap-2">
+      <i class="pi pi-filter text-primary"></i>
+      <span class="text-primary text-sm">
+        Filtres actifs —
+        <strong>{{ filteredTransactions.length }}</strong>
+        transaction{{ filteredTransactions.length !== 1 ? 's' : '' }} sur {{ transactions.length }}
+        <span *ngIf="dateDebut || dateFin">
+          · Période :
+          <strong>{{ dateDebut ? (dateDebut | date:'dd/MM/yyyy') : '…' }}</strong>
+          →
+          <strong>{{ dateFin ? (dateFin | date:'dd/MM/yyyy') : '…' }}</strong>
+        </span>
+      </span>
+    </div>
+  </p-card>
+
+  <!-- ══════════════════════════════════════════════════════════
        CARTES STATISTIQUES — recalculées après chaque filtre
        ══════════════════════════════════════════════════════════ -->
   <div class="statistics-grid">
@@ -90,11 +201,11 @@
     </p-card>
 
     <p-card styleClass="chart-card">
-      <div class="chart-title">Top catégories du mois</div>
+      <div class="chart-title">Dépenses et revenus par catégorie{{ hasActiveFilters ? ' (période sélectionnée)' : '' }}</div>
       <div class="chart-wrapper">
         <canvas #categoriesChartCanvas></canvas>
-        <p *ngIf="statistiques && !statistiques.topCategories?.length" class="chart-empty">
-          Aucune donnée pour le mois en cours
+        <p *ngIf="!filteredTransactions.length" class="chart-empty">
+          Aucune donnée pour la période sélectionnée
         </p>
       </div>
     </p-card>
@@ -139,105 +250,6 @@
       </p-button>
     </ng-template>
   </p-toolbar>
-
-  <!-- ══════════════════════════════════════════════════════════
-       FILTRES
-       ══════════════════════════════════════════════════════════ -->
-  <p-card styleClass="filters-card mb-4">
-    <!-- Ligne 1 : texte + type + statut -->
-    <div class="filters-grid">
-      <div class="filter-field">
-        <label>Rechercher</label>
-        <p-iconfield iconPosition="left">
-          <p-inputicon styleClass="pi pi-search" />
-          <input pInputText type="text"
-                 [(ngModel)]="searchTerm"
-                 (input)="applyFilter()"
-                 placeholder="Référence, catégorie, description..."
-                 class="w-full" />
-        </p-iconfield>
-      </div>
-
-      <div class="filter-field">
-        <label>Type</label>
-        <p-select [(ngModel)]="selectedType"
-                  [options]="typesTransaction"
-                  optionLabel="label" optionValue="value"
-                  placeholder="Tous les types"
-                  (onChange)="onFilterChange()"
-                  [showClear]="true"
-                  class="w-full">
-        </p-select>
-      </div>
-
-      <div class="filter-field">
-        <label>Statut</label>
-        <p-select [(ngModel)]="selectedStatut"
-                  [options]="statutsTransaction"
-                  optionLabel="label" optionValue="value"
-                  placeholder="Tous les statuts"
-                  (onChange)="onFilterChange()"
-                  [showClear]="true"
-                  class="w-full">
-        </p-select>
-      </div>
-    </div>
-
-    <!-- Ligne 2 : dates -->
-    <div class="filters-grid mt-3">
-      <div class="filter-field">
-        <label><i class="pi pi-calendar mr-1"></i>Date de début</label>
-        <p-datepicker [(ngModel)]="dateDebut"
-                      (onSelect)="onFilterChange()"
-                      (onClearClick)="onFilterChange()"
-                      dateFormat="dd/mm/yy"
-                      placeholder="Sélectionner une date"
-                      [showIcon]="true"
-                      [showClear]="true"
-                      class="w-full">
-        </p-datepicker>
-      </div>
-
-      <div class="filter-field">
-        <label><i class="pi pi-calendar mr-1"></i>Date de fin</label>
-        <p-datepicker [(ngModel)]="dateFin"
-                      (onSelect)="onFilterChange()"
-                      (onClearClick)="onFilterChange()"
-                      dateFormat="dd/mm/yy"
-                      placeholder="Sélectionner une date"
-                      [showIcon]="true"
-                      [showClear]="true"
-                      [minDate]="dateDebut ?? undefined"
-                      class="w-full">
-        </p-datepicker>
-      </div>
-
-      <div class="filter-field" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:.5rem">
-        <p-button label="Réinitialiser" icon="pi pi-filter-slash"
-                  severity="secondary" [outlined]="true"
-                  (onClick)="clearFilters()"
-                  [disabled]="!hasActiveFilters">
-        </p-button>
-      </div>
-    </div>
-
-    <!-- Bandeau filtres actifs -->
-    <div *ngIf="hasActiveFilters"
-         class="mt-3 p-2 border-round border-1 border-primary-200 bg-primary-50 flex align-items-center gap-2">
-      <i class="pi pi-filter text-primary"></i>
-      <span class="text-primary text-sm">
-        Filtres actifs —
-        <strong>{{ filteredTransactions.length }}</strong>
-        transaction{{ filteredTransactions.length !== 1 ? 's' : '' }} sur {{ transactions.length }}
-        <span *ngIf="dateDebut || dateFin">
-          · Période :
-          <strong>{{ dateDebut ? (dateDebut | date:'dd/MM/yyyy') : '…' }}</strong>
-          →
-          <strong>{{ dateFin ? (dateFin | date:'dd/MM/yyyy') : '…' }}</strong>
-        </span>
-      </span>
-    </div>
-  </p-card>
 
   <!-- ══════════════════════════════════════════════════════════
        TABLE

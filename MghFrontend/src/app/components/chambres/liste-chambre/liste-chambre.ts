@@ -1,9 +1,8 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
-import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 // PrimeNG
 import { ButtonModule } from 'primeng/button';
@@ -16,6 +15,8 @@ import { MessageService } from 'primeng/api';
 // Services et modèles
 import { ChambreService, Chambre } from '../../../services/chambre.service';
 import { AuthService } from '../../../services/auth.service';
+import { ReservationService } from '../../../services/reservation.service';
+import { Reservation, StatutReservation } from '../../../models/reservation.model';
 import {
   TypeChambre,
   StatutChambre,
@@ -23,16 +24,12 @@ import {
   STATUT_CHAMBRE_LABELS
 } from '../../../models/hotel.model';
 
-Chart.register(...registerables);
-
-const STATUT_CHART_COLORS: Record<string, string> = {
-  DISPONIBLE: '#22c55e',
-  OCCUPEE: '#ef4444',
-  RESERVEE: '#f59e0b',
-  EN_NETTOYAGE: '#3b82f6',
-  EN_MAINTENANCE: '#a855f7',
-  HORS_SERVICE: '#6b7280'
-};
+// Statuts de réservation considérés comme "chambre occupée" pour le calcul du taux
+const STATUTS_OCCUPATION = [
+  StatutReservation.CONFIRMEE,
+  StatutReservation.EN_COURS,
+  StatutReservation.TERMINEE
+];
 
 @Component({
   selector: 'app-liste-chambres',
@@ -49,13 +46,14 @@ const STATUT_CHART_COLORS: Record<string, string> = {
   providers: [MessageService],
   templateUrl: './liste-chambre.html'
 })
-export class ListeChambres implements OnInit, AfterViewInit, OnDestroy {
-
-  @ViewChild('occupationChartCanvas') occupationChartCanvas?: ElementRef<HTMLCanvasElement>;
-  private occupationChart?: Chart;
-  private viewReady = false;
+export class ListeChambres implements OnInit, OnDestroy {
 
   chambres: Chambre[] = [];
+  reservations: Reservation[] = [];
+
+  // Période pour le taux d'occupation (par défaut : aujourd'hui)
+  dateDebut: string = this.toInputDate(new Date());
+  dateFin: string = this.toInputDate(new Date());
   filteredChambres: Chambre[] = [];
   loading = false;
   errorMessage = '';
@@ -88,6 +86,7 @@ export class ListeChambres implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private chambreService: ChambreService,
+    private reservationService: ReservationService,
     private authService: AuthService,
     private router: Router,
     private messageService: MessageService
@@ -97,17 +96,12 @@ export class ListeChambres implements OnInit, AfterViewInit, OnDestroy {
     this.initializeOptions();
     this.loadHotelId();
     this.loadChambres();
-  }
-
-  ngAfterViewInit(): void {
-    this.viewReady = true;
-    this.renderOccupationChart();
+    this.loadReservations();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.occupationChart?.destroy();
   }
 
   private loadHotelId(): void {
@@ -150,13 +144,26 @@ export class ListeChambres implements OnInit, AfterViewInit, OnDestroy {
           this.chambres = chambres;
           this.applyFilters();
           this.loading = false;
-          this.renderOccupationChart();
         },
         error: (error) => {
           console.error('Erreur lors du chargement des chambres:', error);
           this.errorMessage = 'Impossible de charger les chambres. Veuillez réessayer.';
           this.loading = false;
           this.showError('Erreur de chargement', this.errorMessage);
+        }
+      });
+  }
+
+  loadReservations(): void {
+    this.reservationService.getAllReservations()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => {
+          const raw = (resp as any)?.data ?? resp;
+          this.reservations = Array.isArray(raw) ? raw : [];
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des réservations:', error);
         }
       });
   }
@@ -229,43 +236,64 @@ export class ListeChambres implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Taux d'occupation ────────────────────────────────────────────────────────
 
+  /** Nombre moyen de chambres occupées sur la période sélectionnée (arrondi). */
   get chambresOccupees(): number {
-    return this.chambres.filter(c => c.statut === StatutChambre.OCCUPEE).length;
+    const jours = this.joursPeriode();
+    if (jours.length === 0 || this.chambres.length === 0) return 0;
+    const totalChambreJours = jours.reduce((sum, jour) => sum + this.chambresOccupeesLe(jour), 0);
+    return Math.round(totalChambreJours / jours.length);
   }
 
-  /** Taux d'occupation = chambres occupées / total des chambres (arrondi, en %). */
+  /** Taux d'occupation sur la période sélectionnée = chambres occupées / total des chambres (arrondi, en %). */
   get tauxOccupation(): number {
-    if (this.chambres.length === 0) return 0;
-    return Math.round((this.chambresOccupees / this.chambres.length) * 100);
+    const jours = this.joursPeriode();
+    if (jours.length === 0 || this.chambres.length === 0) return 0;
+    const totalPossible = this.chambres.length * jours.length;
+    const totalOccupe = jours.reduce((sum, jour) => sum + this.chambresOccupeesLe(jour), 0);
+    return Math.round((totalOccupe / totalPossible) * 100);
   }
 
-  private renderOccupationChart(): void {
-    if (!this.viewReady) return;
-    const ctx = this.occupationChartCanvas?.nativeElement.getContext('2d');
-    if (!ctx) return;
+  onPeriodeChange(): void {
+    if (this.dateDebut && this.dateFin && this.dateFin < this.dateDebut) {
+      this.dateFin = this.dateDebut;
+    }
+  }
 
-    const counts = Object.values(StatutChambre).map(statut =>
-      this.chambres.filter(c => c.statut === statut).length
-    );
+  private toInputDate(d: Date): string {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
 
-    this.occupationChart?.destroy();
-    const config: ChartConfiguration<'doughnut'> = {
-      type: 'doughnut',
-      data: {
-        labels: Object.values(StatutChambre).map(s => this.getStatutLabel(s)),
-        datasets: [{
-          data: counts,
-          backgroundColor: Object.values(StatutChambre).map(s => STATUT_CHART_COLORS[s])
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '65%',
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+  /** Liste des jours (minuit) compris entre dateDebut et dateFin, inclus. */
+  private joursPeriode(): Date[] {
+    if (!this.dateDebut || !this.dateFin) return [];
+    const start = new Date(this.dateDebut + 'T00:00:00');
+    const end = new Date(this.dateFin + 'T00:00:00');
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return [];
+
+    const jours: Date[] = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      jours.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return jours;
+  }
+
+  /** Nombre de chambres occupées (via réservations) pour un jour donné. */
+  private chambresOccupeesLe(jour: Date): number {
+    const chambresOccupeesIds = new Set<number>();
+    for (const res of this.reservations) {
+      if (!res.statut || !STATUTS_OCCUPATION.includes(res.statut)) continue;
+      const arr = new Date(res.dateArrivee); arr.setHours(0, 0, 0, 0);
+      const dep = new Date(res.dateDepart); dep.setHours(0, 0, 0, 0);
+      if (jour >= arr && jour < dep) {
+        chambresOccupeesIds.add(res.chambreId);
       }
-    };
-    this.occupationChart = new Chart(ctx, config);
+    }
+    return chambresOccupeesIds.size;
   }
 
   getTypeLabel(type: string): string {

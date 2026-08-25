@@ -42,6 +42,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 //    Email
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+//    Génération PDF (rapports)
+    implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
 
 }
 

@@ -171,19 +171,24 @@ public class CommandeRestaurantService {
             }
         }
 
-        CommandeRestaurant saved = commandeRepository.save(commande);
+        BigDecimal resteAPayer = BigDecimal.ZERO;
         if (statut == StatutCommandeRestaurant.PAYEE) {
-            BigDecimal resteAPayer = commande.getMontantTotal()
-                    .subtract(commande.getMontantPaye() != null ?
-                            commande.getMontantPaye() : BigDecimal.ZERO);
+            BigDecimal montantPayeActuel = commande.getMontantPaye() != null ?
+                    commande.getMontantPaye() : BigDecimal.ZERO;
+            resteAPayer = commande.getMontantTotal().subtract(montantPayeActuel);
             if (resteAPayer.compareTo(BigDecimal.ZERO) > 0) {
-                transactionHelper.enregistrerPaiementRestaurant(
-                        commande.getHotel().getId(),
-                        commande.getId(),
-                        commande.getNumeroCommande(),
-                        resteAPayer
-                );
+                commande.setMontantPaye(commande.getMontantTotal());
             }
+        }
+
+        CommandeRestaurant saved = commandeRepository.save(commande);
+        if (statut == StatutCommandeRestaurant.PAYEE && resteAPayer.compareTo(BigDecimal.ZERO) > 0) {
+            transactionHelper.enregistrerPaiementRestaurant(
+                    commande.getHotel().getId(),
+                    commande.getId(),
+                    commande.getNumeroCommande(),
+                    resteAPayer
+            );
         }
         return convertToDto(saved);
     }

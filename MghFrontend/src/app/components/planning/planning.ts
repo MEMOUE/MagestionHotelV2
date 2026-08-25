@@ -58,7 +58,7 @@ export class Planning implements OnInit {
     EN_ATTENTE: { label: 'En attente', color: '#78350f', bg: '#fbbf24', border: '#b45309' },
     CONFIRMEE:  { label: 'Confirmée',  color: '#eff6ff', bg: '#1d4ed8', border: '#1e3a8a' },
     EN_COURS:   { label: 'En cours',   color: '#f0fdf4', bg: '#16a34a', border: '#14532d' },
-    TERMINEE:   { label: 'Terminée',   color: '#fdf4ff', bg: '#7c3aed', border: '#4c1d95' },
+    TERMINEE:   { label: 'Terminée',   color: '#fff1f2', bg: '#9f1239', border: '#4c0519' },
     ANNULEE:    { label: 'Annulée',    color: '#fff1f2', bg: '#dc2626', border: '#7f1d1d' },
     NO_SHOW:    { label: 'No-show',    color: '#fff7ed', bg: '#ea580c', border: '#7c2d12' },
   };

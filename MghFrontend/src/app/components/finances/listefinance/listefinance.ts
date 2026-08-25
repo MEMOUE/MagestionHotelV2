@@ -30,12 +30,13 @@ import {
   TypeTransaction,
   StatutTransaction,
   ModePaiementTransaction,
-  StatistiquesFinancieres,
   TYPE_TRANSACTION_LABELS,
   TYPE_TRANSACTION_COLORS,
   STATUT_TRANSACTION_LABELS,
   STATUT_TRANSACTION_COLORS,
-  MODE_PAIEMENT_LABELS
+  MODE_PAIEMENT_LABELS,
+  CATEGORIES_REVENUS,
+  CATEGORIES_DEPENSES
 } from '../../../models/finance.model';
 import {Toolbar} from 'primeng/toolbar';
 
@@ -61,9 +62,6 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
   private evolutionChart?: Chart;
   private categoriesChart?: Chart;
 
-  statistiques?: StatistiquesFinancieres;
-  loadingStats = false;
-
   // ── Données ───────────────────────────────────────────────────────────────────
   transactions: Transaction[] = [];
   filteredTransactions: Transaction[] = [];
@@ -79,8 +77,9 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Filtres ───────────────────────────────────────────────────────────────────
   searchTerm     = '';
-  selectedType:   TypeTransaction | null = null;
-  selectedStatut: StatutTransaction | null = null;
+  selectedType:      TypeTransaction | null = null;
+  selectedStatut:    StatutTransaction | null = null;
+  selectedCategorie: string | null = null;
   dateDebut: Date | null = null;
   dateFin:   Date | null = null;
 
@@ -99,6 +98,11 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
     { label: STATUT_TRANSACTION_LABELS[StatutTransaction.REMBOURSEE], value: StatutTransaction.REMBOURSEE }
   ];
 
+  /** Catégories disponibles, déduites des transactions chargées. */
+  categoriesTransaction: { label: string; value: string | null }[] = [
+    { label: 'Toutes', value: null }
+  ];
+
   // Expose enums au template
   TypeTransaction    = TypeTransaction;
   StatutTransaction  = StatutTransaction;
@@ -113,7 +117,6 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadTransactions();
-    this.loadStatistiques();
   }
 
   ngAfterViewInit(): void {
@@ -134,6 +137,7 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.transactions = response.data;
+          this.updateCategoriesDisponibles();
           this.applyFilters();
         }
         this.loading = false;
@@ -145,20 +149,21 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  loadStatistiques(): void {
-    this.loadingStats = true;
-    this.financeService.getStatistiques().subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.statistiques = response.data;
-          this.tryRenderCharts();
-        }
-        this.loadingStats = false;
-      },
-      error: () => {
-        this.loadingStats = false;
-      }
-    });
+  private updateCategoriesDisponibles(): void {
+    const noms = (
+      this.selectedType === TypeTransaction.REVENU ? CATEGORIES_REVENUS :
+      this.selectedType === TypeTransaction.DEPENSE ? CATEGORIES_DEPENSES :
+      [...CATEGORIES_REVENUS, ...CATEGORIES_DEPENSES]
+    ).map(c => c.nom);
+
+    this.categoriesTransaction = [
+      { label: 'Toutes', value: null },
+      ...noms.map(c => ({ label: c, value: c }))
+    ];
+
+    if (this.selectedCategorie && !noms.includes(this.selectedCategorie)) {
+      this.selectedCategorie = null;
+    }
   }
 
   // ── Graphiques ────────────────────────────────────────────────────────────────
@@ -166,69 +171,102 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
   private viewReady = false;
 
   private tryRenderCharts(): void {
-    if (!this.viewReady || !this.statistiques) return;
+    this.renderEvolutionChart();
+    this.renderCategoriesChart();
+  }
 
-    const evolution = this.statistiques.evolutionMensuelle ?? [];
+  /**
+   * Graphe de gauche : histogramme Revenus/Dépenses des 6 derniers mois (sans ligne de liaison),
+   * calculé depuis filteredTransactions : respecte donc le type, la catégorie et les dates choisis.
+   */
+  private renderEvolutionChart(): void {
+    if (!this.viewReady) return;
+
     const evolutionCtx = this.evolutionChartCanvas?.nativeElement.getContext('2d');
-    if (evolutionCtx) {
-      this.evolutionChart?.destroy();
-      const config: ChartConfiguration = {
-        type: 'bar',
-        data: {
-          labels: evolution.map(e => e.mois),
-          datasets: [
-            {
-              label: 'Revenus',
-              data: evolution.map(e => e.revenus),
-              backgroundColor: '#4caf50'
-            },
-            {
-              label: 'Dépenses',
-              data: evolution.map(e => e.depenses),
-              backgroundColor: '#f44336'
-            },
-            {
-              label: 'Résultat',
-              data: evolution.map(e => e.resultat),
-              type: 'line',
-              borderColor: '#2196f3',
-              backgroundColor: '#2196f3',
-              tension: 0.3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { y: { ticks: { callback: (v) => this.formatCurrency(Number(v)) } } }
-        }
-      };
-      this.evolutionChart = new Chart(evolutionCtx, config);
-    }
+    if (!evolutionCtx) return;
 
-    const topCategories = this.statistiques.topCategories ?? [];
-    const categoriesCtx = this.categoriesChartCanvas?.nativeElement.getContext('2d');
-    if (categoriesCtx) {
-      this.categoriesChart?.destroy();
-      const palette = ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336', '#00bcd4', '#607d8b'];
-      const config: ChartConfiguration = {
-        type: 'doughnut',
-        data: {
-          labels: topCategories.map(c => c.categorie),
-          datasets: [{
-            data: topCategories.map(c => c.montant),
-            backgroundColor: topCategories.map((_, i) => palette[i % palette.length])
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } }
-        }
+    const validees = this.filteredTransactions.filter(t => t.statut === StatutTransaction.VALIDEE);
+
+    const now = new Date();
+    const mois = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return {
+        label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
+        debut: new Date(d.getFullYear(), d.getMonth(), 1),
+        fin: new Date(d.getFullYear(), d.getMonth() + 1, 1)
       };
-      this.categoriesChart = new Chart(categoriesCtx, config);
-    }
+    });
+
+    const transactionsDuMois = (m: { debut: Date; fin: Date }) =>
+      validees.filter(t =>
+        t.dateTransaction &&
+        new Date(t.dateTransaction) >= m.debut &&
+        new Date(t.dateTransaction) < m.fin
+      );
+
+    this.evolutionChart?.destroy();
+    const config: ChartConfiguration = {
+      type: 'bar',
+      data: {
+        labels: mois.map(m => m.label),
+        datasets: [
+          {
+            label: 'Revenus',
+            data: mois.map(m => this.sumMontant(transactionsDuMois(m), TypeTransaction.REVENU)),
+            backgroundColor: '#4caf50'
+          },
+          {
+            label: 'Dépenses',
+            data: mois.map(m => this.sumMontant(transactionsDuMois(m), TypeTransaction.DEPENSE)),
+            backgroundColor: '#f44336'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { ticks: { callback: (v) => this.formatCurrency(Number(v)) } } }
+      }
+    };
+    this.evolutionChart = new Chart(evolutionCtx, config);
+  }
+
+  /** Graphe de droite : dépenses vs revenus par catégorie, sur la période sélectionnée (filteredTransactions). */
+  private renderCategoriesChart(): void {
+    if (!this.viewReady) return;
+
+    const categoriesCtx = this.categoriesChartCanvas?.nativeElement.getContext('2d');
+    if (!categoriesCtx) return;
+
+    const validees = this.filteredTransactions.filter(t => t.statut === StatutTransaction.VALIDEE);
+
+    const categories = Array.from(new Set(validees.map(t => t.categorie || 'Autre'))).sort();
+    const revenusParCategorie = categories.map(cat =>
+      this.sumMontant(validees.filter(t => (t.categorie || 'Autre') === cat), TypeTransaction.REVENU)
+    );
+    const depensesParCategorie = categories.map(cat =>
+      this.sumMontant(validees.filter(t => (t.categorie || 'Autre') === cat), TypeTransaction.DEPENSE)
+    );
+
+    this.categoriesChart?.destroy();
+    const config: ChartConfiguration = {
+      type: 'bar',
+      data: {
+        labels: categories,
+        datasets: [
+          { label: 'Revenus', data: revenusParCategorie, backgroundColor: '#4caf50' },
+          { label: 'Dépenses', data: depensesParCategorie, backgroundColor: '#f44336' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { ticks: { callback: (v) => this.formatCurrency(Number(v)) } } }
+      }
+    };
+    this.categoriesChart = new Chart(categoriesCtx, config);
   }
 
   // ── Filtres + stats dynamiques ────────────────────────────────────────────────
@@ -245,8 +283,9 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
       );
     }
 
-    if (this.selectedType)   result = result.filter(t => t.type   === this.selectedType);
-    if (this.selectedStatut) result = result.filter(t => t.statut === this.selectedStatut);
+    if (this.selectedType)      result = result.filter(t => t.type      === this.selectedType);
+    if (this.selectedStatut)    result = result.filter(t => t.statut    === this.selectedStatut);
+    if (this.selectedCategorie) result = result.filter(t => t.categorie === this.selectedCategorie);
 
     if (this.dateDebut) {
       const debut = new Date(this.dateDebut); debut.setHours(0, 0, 0, 0);
@@ -259,22 +298,28 @@ export class Listefinance implements OnInit, AfterViewInit, OnDestroy {
 
     this.filteredTransactions = result;
     this.recalculerStats();
+    this.tryRenderCharts();
   }
 
-  onFilterChange(): void { this.applyFilters(); }
+  onFilterChange(): void {
+    this.updateCategoriesDisponibles();
+    this.applyFilters();
+  }
   applyFilter():    void { this.applyFilters(); }
 
   clearFilters(): void {
-    this.searchTerm     = '';
-    this.selectedType   = null;
-    this.selectedStatut = null;
-    this.dateDebut      = null;
-    this.dateFin        = null;
+    this.searchTerm        = '';
+    this.selectedType      = null;
+    this.selectedStatut    = null;
+    this.selectedCategorie = null;
+    this.dateDebut         = null;
+    this.dateFin           = null;
+    this.updateCategoriesDisponibles();
     this.applyFilters();
   }
 
   get hasActiveFilters(): boolean {
-    return !!(this.searchTerm || this.selectedType || this.selectedStatut || this.dateDebut || this.dateFin);
+    return !!(this.searchTerm || this.selectedType || this.selectedStatut || this.selectedCategorie || this.dateDebut || this.dateFin);
   }
 
   // ── Recalcul des 4 cartes depuis filteredTransactions ─────────────────────────
@@ -525,9 +570,10 @@ ${filterLabel ? `<div class="filters">Filtres : ${filterLabel}</div>` : ''}
   private buildFilterLabel(): string {
     const parts: string[] = [];
     if (this.searchTerm)     parts.push(`Recherche: "${this.searchTerm}"`);
-    if (this.selectedType)   parts.push(`Type: ${this.getTypeLabel(this.selectedType)}`);
-    if (this.selectedStatut) parts.push(`Statut: ${this.getStatutLabel(this.selectedStatut)}`);
-    if (this.dateDebut)      parts.push(`Du: ${new Date(this.dateDebut).toLocaleDateString('fr-FR')}`);
+    if (this.selectedType)      parts.push(`Type: ${this.getTypeLabel(this.selectedType)}`);
+    if (this.selectedStatut)    parts.push(`Statut: ${this.getStatutLabel(this.selectedStatut)}`);
+    if (this.selectedCategorie) parts.push(`Catégorie: ${this.selectedCategorie}`);
+    if (this.dateDebut)         parts.push(`Du: ${new Date(this.dateDebut).toLocaleDateString('fr-FR')}`);
     if (this.dateFin)        parts.push(`Au: ${new Date(this.dateFin).toLocaleDateString('fr-FR')}`);
     return parts.join(' | ');
   }

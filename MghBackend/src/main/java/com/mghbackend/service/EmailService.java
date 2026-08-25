@@ -3,10 +3,12 @@ package com.mghbackend.service;
 import com.mghbackend.entity.Transaction;
 import com.mghbackend.enums.TypeTransaction;
 import com.mghbackend.exception.BusinessException;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.YearMonth;
@@ -96,6 +99,8 @@ public class EmailService {
         try {
             String subject = "Rapport financier mensuel — " + moisLabel + " — " + hotelName;
             String htmlContent = buildMonthlyReportHtml(hotelName, moisLabel, transactions, totalRevenus, totalDepenses);
+            byte[] pdf = renderHtmlToPdf(
+                    buildMonthlyReportPdfHtml(hotelName, moisLabel, transactions, totalRevenus, totalDepenses));
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -104,14 +109,131 @@ public class EmailService {
             helper.setTo(toEmail);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
+            helper.addAttachment(
+                    "Rapport-financier-" + mois + ".pdf",
+                    new ByteArrayResource(pdf)
+            );
 
             mailSender.send(message);
 
-            log.info("✅ Rapport financier mensuel envoyé à {} pour {} ({})", toEmail, hotelName, moisLabel);
+            log.info("✅ Rapport financier mensuel (PDF) envoyé à {} pour {} ({})", toEmail, hotelName, moisLabel);
         } catch (Exception e) {
             log.error("❌ Erreur envoi rapport financier mensuel à {} : {}", toEmail, e.getMessage());
             throw new BusinessException("Impossible d'envoyer le rapport par email : " + e.getMessage());
         }
+    }
+
+    /**
+     * Génère le PDF du rapport financier mensuel à partir d'un HTML dédié
+     * (structure XHTML stricte requise par le moteur de rendu PDF).
+     */
+    private byte[] renderHtmlToPdf(String xhtml) {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            builder.useFastMode();
+            builder.withHtmlContent(xhtml, "");
+            builder.toStream(os);
+            builder.run();
+            return os.toByteArray();
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la génération du PDF du rapport : " + e.getMessage());
+        }
+    }
+
+    private String buildMonthlyReportPdfHtml(String hotelName, String moisLabel, List<Transaction> transactions,
+                                              BigDecimal totalRevenus, BigDecimal totalDepenses) {
+        BigDecimal solde = totalRevenus.subtract(totalDepenses);
+        String soldeColor = solde.compareTo(BigDecimal.ZERO) >= 0 ? "#059669" : "#dc2626";
+
+        StringBuilder rows = new StringBuilder();
+        if (transactions.isEmpty()) {
+            rows.append("<tr><td colspan=\"5\" style=\"padding:14px;text-align:center;color:#999999;\">Aucune transaction ce mois-ci</td></tr>");
+        } else {
+            for (Transaction t : transactions) {
+                boolean revenu = t.getType() == TypeTransaction.REVENU;
+                String typeLabel = revenu ? "Revenu" : "Depense";
+                String color = revenu ? "#059669" : "#dc2626";
+                String sign = revenu ? "+" : "-";
+                rows.append("""
+                    <tr>
+                        <td style="padding:6px 8px;border-bottom:1px solid #eeeeee;">%s</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #eeeeee;color:%s;">%s</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #eeeeee;">%s</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #eeeeee;">%s</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #eeeeee;text-align:right;color:%s;">%s%s FCFA</td>
+                    </tr>
+                    """.formatted(
+                        t.getDateTransaction().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                        color, typeLabel,
+                        escape(t.getCategorie()),
+                        escape(t.getDescription()),
+                        color, sign, formatMontant(t.getMontant())
+                ));
+            }
+        }
+
+        return """
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+                <meta charset="UTF-8" />
+                <style>
+                    body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #1a1a2e; }
+                    h1 { font-size: 18px; margin: 0 0 4px 0; }
+                    .subtitle { color: #666666; font-size: 11px; margin-bottom: 20px; }
+                    table.summary { width: 100%%; border-collapse: collapse; margin-bottom: 20px; }
+                    table.summary td { padding: 12px; text-align: center; border: 1px solid #eeeeee; width: 33%%; }
+                    .summary-label { color: #666666; font-size: 10px; text-transform: uppercase; }
+                    .summary-value { font-size: 15px; font-weight: bold; }
+                    table.detail { width: 100%%; border-collapse: collapse; }
+                    table.detail thead th { background: #1a1a2e; color: #ffffff; padding: 8px; text-align: left; font-size: 10px; text-transform: uppercase; }
+                    .footer { margin-top: 24px; color: #999999; font-size: 9px; text-align: center; }
+                </style>
+            </head>
+            <body>
+                <h1>%s</h1>
+                <div class="subtitle">Rapport financier mensuel — %s</div>
+
+                <table class="summary">
+                    <tr>
+                        <td>
+                            <div class="summary-label">Revenus</div>
+                            <div class="summary-value" style="color:#059669;">%s FCFA</div>
+                        </td>
+                        <td>
+                            <div class="summary-label">Depenses</div>
+                            <div class="summary-value" style="color:#dc2626;">%s FCFA</div>
+                        </td>
+                        <td>
+                            <div class="summary-label">Solde</div>
+                            <div class="summary-value" style="color:%s;">%s FCFA</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="detail">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Categorie</th>
+                            <th>Description</th>
+                            <th>Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        %s
+                    </tbody>
+                </table>
+
+                <div class="footer">Rapport genere automatiquement par MaGestionHotel</div>
+            </body>
+            </html>
+            """.formatted(
+                escape(hotelName), moisLabel,
+                formatMontant(totalRevenus), formatMontant(totalDepenses),
+                soldeColor, formatMontant(solde),
+                rows.toString()
+        );
     }
 
     private String buildMonthlyReportHtml(String hotelName, String moisLabel, List<Transaction> transactions,
